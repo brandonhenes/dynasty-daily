@@ -1,0 +1,145 @@
+{
+  "name": "Sub - News Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "id": "b569eaed-d8ee-49f4-b051-d7ba88a8899e",
+      "name": "When Called By Main",
+      "position": [
+        -400,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build the prompt from received article data\nconst input = $input.first().json;\nconst articles = input.articles || [];\nconst fcPlayers = input.fcPlayers || [];\nconst dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/Chicago' });\n\nconst articleBlock = articles.map((a, i) => {\n  const text = (a.extracted_text || a.description || '').substring(0, 3500);\n  return `--- ARTICLE ${i+1} [Tier ${a.tier||3}] ---\nTitle: ${a.title}\nSource: ${a.source}\nDate: ${a.pubDate || 'today'}\nURL: ${a.link || ''}\nFull Text:\n${text}`;\n}).join('\\n\\n');\n\nreturn [{ json: {\n  systemPrompt: `You are the NEWS ANALYST for Dynasty Daily \\u2014 a premium daily dynasty fantasy football intelligence briefing for Brandon, who manages 30 SF/TEP/12-team Sleeper leagues.\n\nYou are the ONLY person reading these articles. If you skip something, it will NOT appear in the briefing.\n\nPrioritize by IMPACT:\n- TIER 1 (always cover): Trades, major FA signings, starting QB changes, star injuries, scheme changes\n- TIER 2 (cover if space): Coaching hires, cap restructures, depth chart battles, extensions\n- TIER 3 (skip unless quiet day): Futures contracts, practice squad, depth LB/DL releases\n\nOn busy days with 10+ real stories, skip Tier 3 entirely.\n\nOUTPUT FORMAT:\nYou MUST output valid JSON. No markdown, no prose, no commentary outside the JSON structure.\n\nOutput a JSON array of player entries:\n\n[NFL_NEWS]\n[\n  {\n    \\\"player\\\": \\\"Full Player Name\\\",\n    \\\"event\\\": \\\"Signed/Released/Injured/Traded/Tagged/Buy-Low Signal/Sell Signal/etc.\\\",\n    \\\"age\\\": 25,\n    \\\"fc_value\\\": 3230,\n    \\\"fc_trend_30d\\\": 271,\n    \\\"impact\\\": \\\"2-3 sentences on dynasty impact. Include contract context, landing spot implications.\\\",\n    \\\"second_order\\\": \\\"Who else is affected? Handcuffs, target share shifts, depth chart changes.\\\",\n    \\\"action\\\": \\\"BUY\\\",\n    \\\"action_reasoning\\\": \\\"1 sentence explaining exactly what Brandon should do.\\\"\n  },\n  ...\n]\n\nMANDATORY FIELD RULES:\n- \\\"fc_value\\\" and \\\"fc_trend_30d\\\" MUST come from the FC VALUE REFERENCE provided above. Search for the player by name.\n- If the player is NOT in the FC reference, set \\\"fc_value\\\": null and \\\"fc_trend_30d\\\": null. Do NOT guess or fabricate values.\n- \\\"action\\\" must be one of: BUY, SELL, HOLD, MONITOR, DROP\n- \\\"action\\\" must be CONSISTENT with fc_value:\n  - If fc_value > 5000 and fc_trend_30d > 0, the player is already premium and rising. \\\"BUY\\\" requires strong justification. Consider \\\"HOLD\\\" instead.\n  - If fc_value < 200, \\\"SELL\\\" makes no sense \\u2014 consider \\\"DROP\\\" or \\\"MONITOR\\\"\n  - \\\"Buy-low\\\" is only valid if fc_value has DECLINED (negative trend) or is temporarily depressed\n\nCRITICAL: Your training data about player values, teams, and rosters may be OUTDATED. Only trust the articles and FC reference provided. If the FC reference says a player is on Team X, use that. If an article says they were just traded to Team Y, note the discrepancy \\u2014 the article is more current.\n\nRULES:\n- Bold (**name**) every player name on first mention\n- No filler, no hedging. \"Monitor the situation\" is BANNED.\n- Include specific ages, contract years, target/touch counts when available\n- Frame everything for SF/TEP/12-team dynasty context\n- If articles conflict, note the disagreement\n- Be opinionated. Tell Brandon what to DO.\n- Minimum 5 entries, maximum 12\n\nCRITICAL RULES \\u2014 DO NOT VIOLATE:\n- ONLY report information that is EXPLICITLY stated in the articles provided. Do NOT infer, guess, or fabricate team rosters, coaching staffs, or player situations.\n- If an article says \"Player X could be traded\" \\u2014 report ONLY what the article says. Do NOT invent which players benefit or lose value unless the article specifically names them.\n- If you don't know a player's current team, age, or contract from the articles, say \"per the article\" and only cite what's written. Do NOT fill in details from memory \\u2014 your training data may be outdated.\n- It is February 2026. Any \"facts\" about rosters from your training data may be 1-2 years stale. ONLY trust the articles.\n\nCRITICAL OUTPUT RULES:\n- Your output must contain ONLY the [NFL_NEWS] section.\n- Do NOT include any meta-commentary about your own analysis process.\n- Do NOT repeat instructions from this prompt in your output.\n- End the section cleanly after the last item. No summary paragraphs.`,\n  userPrompt: `${dateStr}\\n\\nYou have ${articles.length} articles to analyze. Read EVERY one thoroughly.\\n\\n${articleBlock}\\n\\n=== FC VALUE REFERENCE (top 150 players) ===\\n${fcPlayers.length > 0 ? fcPlayers.map(p => `${p.name} (${p.pos}, ${p.team}): FC ${p.fc}, 30d: ${p.trend > 0 ? '+' : ''}${p.trend}`).join('\\n') : '(FC data unavailable)'}\\n\\nWrite your analysis now. Prioritize by IMPACT:\n- TIER 1 (always cover): Trades, major free agent signings, starting QB changes, star player injuries, scheme changes\n- TIER 2 (cover if space): Coaching hires, cap restructures, depth chart battles, contract extensions  \n- TIER 3 (skip unless quiet news day): Futures contracts, practice squad moves, depth LB/DL releases, special teams signings\nOn busy days with 10+ real stories, skip Tier 3 entirely. Brandon doesn't need to know about a WR6 signing a futures deal.`\n}}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "ec8922f0-5ae6-492d-bea5-21e0cc94567e",
+      "name": "Build News Prompt",
+      "position": [
+        -160,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.userPrompt}}",
+        "options": {
+          "systemMessage": "={{$json.systemPrompt}}",
+          "maxIterations": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "id": "26f8d824-5f90-4f89-a8dc-897068793e9f",
+      "name": "News Agent",
+      "position": [
+        80,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        80,
+        80
+      ],
+      "id": "5c20b43b-1337-4f8d-a53a-6f524fa2ca07",
+      "name": "News Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "pvmfVuuHc6DAJEgl",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const agentOutput = $input.first().json;\nconst text = agentOutput.message?.content || agentOutput.text || agentOutput.output || '';\n\nif (text.length < 50) {\n  return [{ json: {\n    nfl_news: 'News analysis unavailable \\u2014 AI agent did not return output.',\n    news_entries: [],\n    raw: text,\n    success: false\n  }}];\n}\n\n// Extract JSON array from the output\nlet entries = [];\ntry {\n  let jsonStr = text;\n  const nflIdx = text.indexOf('[NFL_NEWS]');\n  if (nflIdx > -1) {\n    jsonStr = text.substring(nflIdx + '[NFL_NEWS]'.length).trim();\n  }\n  const arrStart = jsonStr.indexOf('[');\n  const arrEnd = jsonStr.lastIndexOf(']');\n  if (arrStart > -1 && arrEnd > arrStart) {\n    entries = JSON.parse(jsonStr.substring(arrStart, arrEnd + 1));\n  }\n} catch(e) {\n  entries = [];\n}\n\n// Build prose from structured data (backward-compatible with Format HTML)\nlet nflNews = '';\nif (entries.length > 0) {\n  nflNews = entries.map(e => {\n    const fcStr = e.fc_value != null ? ` (FC: ${e.fc_value.toLocaleString()}, \\u0394: ${e.fc_trend_30d > 0 ? '+' : ''}${e.fc_trend_30d || 0})` : '';\n    return `**${e.player}**${fcStr} \\u2014 ${e.event}\\n\\nImpact: ${e.impact}\\n\\nSecond-order: ${e.second_order}\\n\\nAction: ${e.action} \\u2014 ${e.action_reasoning}`;\n  }).join('\\n\\n');\n} else {\n  const idx = text.indexOf('[NFL_NEWS]');\n  nflNews = idx > -1 ? text.substring(idx + '[NFL_NEWS]'.length).trim() : text;\n}\n\nreturn [{ json: {\n  nfl_news: nflNews,\n  news_entries: entries,\n  raw: text,\n  success: entries.length > 0\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "fd2e940b-3956-47b6-84d5-6e37a106c56c",
+      "name": "Package Output",
+      "position": [
+        320,
+        -128
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Called By Main": {
+      "main": [
+        [
+          {
+            "node": "Build News Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build News Prompt": {
+      "main": [
+        [
+          {
+            "node": "News Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "News Agent": {
+      "main": [
+        [
+          {
+            "node": "Package Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "News Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "News Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0f28417a-c9e8-4227-80b7-c47a9bf158a8",
+  "meta": {
+    "instanceId": "1dfcdd22466a9c775c71d3fa89d9e5137a0319cdd80e800b4f7027374e4e4fb9"
+  },
+  "id": "bOYvlcXz9Bk1ZpQO",
+  "tags": []
+}

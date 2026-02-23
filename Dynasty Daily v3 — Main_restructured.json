@@ -1,0 +1,770 @@
+{
+  "name": "Dynasty Daily v3 — Main",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 5
+            }
+          ]
+        }
+      },
+      "id": "3e834082-127c-4fe8-9b97-6b2d9c37605e",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1488,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Package article data + FC reference for News Agent sub-workflow\nconst pipe = $('Wait: All Pipelines').first().json;\nconst articles = pipe.allArticles || [];\n\n// Build FC lookup for News Agent\nlet fcQuickRef = [];\ntry {\n  const allPlayers = pipe.fcData?.fantasycalc?.allPlayers || pipe.fcData?.fc_values || [];\n  fcQuickRef = allPlayers\n    .filter(p => !p.is_pick && p.dynasty_value >= 200)\n    .sort((a, b) => (b.dynasty_value || 0) - (a.dynasty_value || 0))\n    .slice(0, 150)\n    .map(p => ({\n      name: p.player_name,\n      pos: p.position,\n      team: p.team,\n      fc: p.dynasty_value,\n      trend: p.trend_30day || 0,\n      age: p.age || null\n    }));\n} catch(e) {}\n\nreturn [{ json: { articles, fcPlayers: fcQuickRef } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "1984e852-36b8-44d9-b093-911379b3b007",
+      "name": "Package News Data",
+      "position": [
+        1408,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Package all market data for Market Agent sub-workflow\nconst pipe = $('Wait: All Pipelines').first().json;\n\nconst fc = pipe.fcData?.fantasycalc || {};\nconst trending = pipe.trendingData || {};\nconst fcDiffs = (pipe.fcDiffs || []).filter(r => r && r.player_name);\nconst streaks = (pipe.signalStreaks || []).filter(r => r && r.player_name);\nconst mentions = (pipe.mentionCounts || []).filter(r => r && r.player_name);\n\nreturn [{ json: {\n  fantasycalc: fc,\n  trending,\n  fcDiffs,\n  streaks,\n  mentions\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "bf25452c-a5bf-4199-8588-a0750a9e0b99",
+      "name": "Package Market Data",
+      "position": [
+        1408,
+        784
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Package prospect data for Prospect Agent sub-workflow\n// v3.1: includes prospects_2026 whitelist for filtering\nconst pipe = $('Wait: All Pipelines').first().json;\n\nconst prospectArticles = pipe.prospectArticles || [];\nconst prospects = (pipe.prospectProfiles || []).filter(r => r && r.player_name);\nconst whitelist = (pipe.whitelist || []).filter(r => r && r.player_name);\n\nreturn [{ json: {\n  prospectArticles,\n  existingProspects: prospects,\n  whitelist: whitelist\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "fa90a602-8d9c-42f7-a1cb-91f536122418",
+      "name": "Package Prospect Data",
+      "position": [
+        1408,
+        1184
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "bOYvlcXz9Bk1ZpQO",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/bOYvlcXz9Bk1ZpQO",
+          "cachedResultName": "Sub - News Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "id": "39d7cf39-4d7a-4406-883c-995ae912d15b",
+      "name": "Execute: News Agent",
+      "position": [
+        1648,
+        80
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Yipz7CjK0xnnVCHi",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Yipz7CjK0xnnVCHi",
+          "cachedResultName": "Sub - Market Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "id": "3dca04f0-d9c9-46b6-9abd-0f8415eea8aa",
+      "name": "Execute: Market Agent",
+      "position": [
+        1648,
+        784
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "8fSzA5dfiAZZzY8u",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/8fSzA5dfiAZZzY8u",
+          "cachedResultName": "Sub - Prospect Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "id": "0aa8afd7-bf37-4c18-b6ef-98966db54921",
+      "name": "Execute: Prospect Agent",
+      "position": [
+        1648,
+        1184
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "id": "4ca28e43-f5f4-49cb-a198-818e6e79d48d",
+      "name": "Wait: All Agents",
+      "position": [
+        1968,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine all 3 agent outputs for Master Agent\nlet newsOutput = '';\ntry {\n  const n = $('Execute: News Agent').first().json;\n  newsOutput = n.nfl_news ? ('[NFL_NEWS]\\n' + n.nfl_news + '\\n\\n[DYNASTY_READS]\\n' + (n.dynasty_reads||'')) : (n.raw || '');\n} catch(e) {}\n\nlet marketOutput = '';\ntry {\n  const m = $('Execute: Market Agent').first().json;\n  marketOutput = m.dynasty_values ? ('[DYNASTY_VALUES]\\n' + m.dynasty_values + '\\n\\n[WAIVER_COMMENTARY]\\n' + (m.waiver_commentary||'')) : (m.raw || '');\n} catch(e) {}\n\nlet prospectOutput = '';\ntry {\n  const p = $('Execute: Prospect Agent').first().json;\n  prospectOutput = p.db_updates ? ('Prospect DB updates today:\\n' + p.db_updates) : (p.raw || '');\n} catch(e) {}\n\n// ══════════════════════════════════════════════════════════\n// FC REFERENCE — top 150 non-pick players + all 2026 picks\n// ══════════════════════════════════════════════════════════\nlet allPlayers = [];\nlet pickRef = [];\nlet fcQuickRef = '';\ntry {\n  const pipe = $('Wait: All Pipelines').first().json;\n  const fc = pipe.fcData || {};\n  allPlayers = fc.fantasycalc?.allPlayers || fc.fc_values || [];\n\n  const nonPicks = allPlayers\n    .filter(p => !p.is_pick)\n    .sort((a, b) => (b.dynasty_value || 0) - (a.dynasty_value || 0));\n\n  const top150 = nonPicks.filter(p => (p.dynasty_value || 0) >= 100).slice(0, 150);\n  pickRef = allPlayers.filter(p => p.is_pick && /2026/.test(p.player_name || ''));\n\n  fcQuickRef = '\\n\\n=== FC REFERENCE (top 150 players) ===\\n' +\n    top150.map(p => `${p.player_name} (${p.position}, ${p.team}): ${p.dynasty_value} ${p.trend_30day > 0 ? '+' : ''}${p.trend_30day || 0}`).join('\\n') +\n    '\\n\\n=== 2026 PICKS ===\\n' +\n    pickRef.map(p => `${p.player_name}: ${p.dynasty_value} ${p.trend_30day > 0 ? '+' : ''}${p.trend_30day || 0}`).join('\\n');\n} catch(e) {}\n\n// ══════════════════════════════════════════════════════════\n// PRE-COMPUTED ONE MOVE TRADE PACKAGES\n// ══════════════════════════════════════════════════════════\n// The model CANNOT do math. We compute valid trades in code\n// and let the model pick the best narrative.\n\nlet tradePackages = '';\ntry {\n  // Build lookup\n  const fcMap = {};\n  for (const p of allPlayers) {\n    if (p.player_name && p.dynasty_value) {\n      fcMap[p.player_name.toLowerCase().trim()] = {\n        name: p.player_name,\n        pos: p.position || '',\n        team: p.team || '',\n        val: p.dynasty_value,\n        trend: p.trend_30day || 0,\n        isPick: !!p.is_pick\n      };\n    }\n  }\n\n  // ══════════════════════════════════════════════════════════\n  // TEP ADJUSTMENT: Brandon plays 2PPR TE leagues\n  // FantasyCalc doesn't support TEP, so we manually boost TE values\n  // 1.4x multiplier approximates the positional advantage of 2PPR TE\n  // This affects trade package math only — display values stay raw FC\n  // ══════════════════════════════════════════════════════════\n  const nonPicks = allPlayers.filter(p => !p.is_pick && p.dynasty_value >= 500);\n  const TEP_MULTIPLIER = 1.4;\n  const tepAdjusted = {};  // name -> adjusted value for trade math\n  for (const p of nonPicks) {\n    const key = (p.player_name || '').toLowerCase().trim();\n    if ((p.position || '').toUpperCase() === 'TE') {\n      tepAdjusted[key] = Math.round(p.dynasty_value * TEP_MULTIPLIER);\n    } else {\n      tepAdjusted[key] = p.dynasty_value;\n    }\n  }\n  const picks2026 = allPlayers.filter(p => p.is_pick && /2026/.test(p.player_name || '') && p.dynasty_value >= 500 && p.dynasty_value <= 3000);\n  for (const p of picks2026) {\n    tepAdjusted[(p.player_name || '').toLowerCase().trim()] = p.dynasty_value;\n  }\n\n  // Identify SEND candidates: declining value, aging, or sell-high\n  // (negative trend OR very high value (sell high), or in news today)\n  const sendCandidates = nonPicks\n    .filter(p => {\n      const trend = p.trend_30day || 0;\n      const val = p.dynasty_value || 0;\n      // Declining, or very high value (sell high), or in news today\n      return trend < -100 || (val > 5000 && trend < 0) || (val > 2000 && val < 5000 && trend < -200);\n    })\n    .sort((a, b) => (a.trend_30day || 0) - (b.trend_30day || 0))\n    .slice(0, 15);\n\n  // Identify GET candidates: buy-low, rising, undervalued\n  const getCandidates = nonPicks\n    .filter(p => {\n      const trend = p.trend_30day || 0;\n      const val = p.dynasty_value || 0;\n      // Rising, or significantly declining (buy low), or mid-value with upside\n      return (trend > 100 && val < 6000) || (trend < -300 && val > 1000) || (val > 500 && val < 3000 && trend > 0);\n    })\n    .sort((a, b) => (b.trend_30day || 0) - (a.trend_30day || 0))\n    .slice(0, 20);\n\n  // Generate valid trade packages\n  // Target: SEND 1 player, GET 1-2 players + optional pick\n  // Ratio must be 0.90-1.05 (opponent gets slightly more FC value)\n  const packages = [];\n\n  for (const send of sendCandidates) {\n    const sendVal = send.dynasty_value;\n    const sendValAdj = tepAdjusted[(send.player_name || '').toLowerCase().trim()] || sendVal;\n\n    // Try 1-for-1 trades\n    for (const get1 of getCandidates) {\n      if (get1.player_name === send.player_name) continue;\n      const getVal = get1.dynasty_value;\n      const getValAdj = tepAdjusted[(get1.player_name || '').toLowerCase().trim()] || getVal;\n      const ratio = sendValAdj / getValAdj;\n      if (ratio >= 0.75 && ratio <= 1.30) {\n        packages.push({\n          send: [{ name: send.player_name, pos: send.position, team: send.team, fc: sendVal, trend: send.trend_30day || 0 }],\n          get: [{ name: get1.player_name, pos: get1.position, team: get1.team, fc: getVal, trend: get1.trend_30day || 0 }],\n          sendTotal: sendVal,\n          getTotal: getVal,\n          sendTotalAdj: sendValAdj,\n          getTotalAdj: getValAdj,\n          ratio: ratio.toFixed(3),\n          type: '1-for-1'\n        });\n      }\n    }\n\n    // Try 1-for-2 trades (player + pick or player + player)\n    for (const get1 of getCandidates) {\n      if (get1.player_name === send.player_name) continue;\n      const get1Adj = tepAdjusted[(get1.player_name || '').toLowerCase().trim()] || get1.dynasty_value;\n\n      // Add a pick to balance\n      for (const pick of picks2026) {\n        const getTotal = get1.dynasty_value + pick.dynasty_value;\n        const getTotalAdj = get1Adj + (tepAdjusted[(pick.player_name || '').toLowerCase().trim()] || pick.dynasty_value);\n        const ratio = sendValAdj / getTotalAdj;\n        if (ratio >= 0.75 && ratio <= 1.30) {\n          packages.push({\n            send: [{ name: send.player_name, pos: send.position, team: send.team, fc: sendVal, trend: send.trend_30day || 0 }],\n            get: [\n              { name: get1.player_name, pos: get1.position, team: get1.team, fc: get1.dynasty_value, trend: get1.trend_30day || 0 },\n              { name: pick.player_name, pos: 'PICK', team: '', fc: pick.dynasty_value, trend: pick.trend_30day || 0 }\n            ],\n            sendTotal: sendVal,\n            getTotal: getTotal,\n            sendTotalAdj: sendValAdj,\n            getTotalAdj: getTotalAdj,\n            ratio: ratio.toFixed(3),\n            type: '1-for-2 (player+pick)'\n          });\n        }\n      }\n\n      // Add a second player to balance\n      for (const get2 of getCandidates) {\n        if (get2.player_name === send.player_name || get2.player_name === get1.player_name) continue;\n        const get2Adj = tepAdjusted[(get2.player_name || '').toLowerCase().trim()] || get2.dynasty_value;\n        const getTotal = get1.dynasty_value + get2.dynasty_value;\n        const getTotalAdj = get1Adj + get2Adj;\n        const ratio = sendValAdj / getTotalAdj;\n        if (ratio >= 0.75 && ratio <= 1.30) {\n          packages.push({\n            send: [{ name: send.player_name, pos: send.position, team: send.team, fc: sendVal, trend: send.trend_30day || 0 }],\n            get: [\n              { name: get1.player_name, pos: get1.position, team: get1.team, fc: get1.dynasty_value, trend: get1.trend_30day || 0 },\n              { name: get2.player_name, pos: get2.position, team: get2.team, fc: get2.dynasty_value, trend: get2.trend_30day || 0 }\n            ],\n            sendTotal: sendVal,\n            getTotal: getTotal,\n            sendTotalAdj: sendValAdj,\n            getTotalAdj: getTotalAdj,\n            ratio: ratio.toFixed(3),\n            type: '1-for-2 (player+player)'\n          });\n        }\n      }\n    }\n\n    // Also try 2-for-1 (send player + pick, get 1 big player)\n    for (const pick of picks2026) {\n      const sendTotal = sendVal + pick.dynasty_value;\n      const sendTotalAdj = sendValAdj + (tepAdjusted[(pick.player_name || '').toLowerCase().trim()] || pick.dynasty_value);\n      for (const get1 of getCandidates) {\n        if (get1.player_name === send.player_name) continue;\n        const get1Adj = tepAdjusted[(get1.player_name || '').toLowerCase().trim()] || get1.dynasty_value;\n        const ratio = sendTotalAdj / get1Adj;\n        if (ratio >= 0.75 && ratio <= 1.30 && get1.dynasty_value > sendVal) {\n          packages.push({\n            send: [\n              { name: send.player_name, pos: send.position, team: send.team, fc: sendVal, trend: send.trend_30day || 0 },\n              { name: pick.player_name, pos: 'PICK', team: '', fc: pick.dynasty_value, trend: pick.trend_30day || 0 }\n            ],\n            get: [{ name: get1.player_name, pos: get1.position, team: get1.team, fc: get1.dynasty_value, trend: get1.trend_30day || 0 }],\n            sendTotal: sendTotal,\n            getTotal: get1.dynasty_value,\n            sendTotalAdj: sendTotalAdj,\n            getTotalAdj: get1Adj,\n            ratio: ratio.toFixed(3),\n            type: '2-for-1 (player+pick for upgrade)'\n          });\n        }\n      }\n    }\n  }\n\n  // Categorize packages into tiers\n  function getTier(ratio) {\n    const r = parseFloat(ratio);\n    if (r >= 0.92 && r <= 1.05) return 'safe';\n    if (r >= 0.80 && r < 0.92) return 'speculative';\n    if (r > 1.05 && r <= 1.25) return 'smash';\n    return null;\n  }\n\n  // Score packages\n  const newsText = (newsOutput + ' ' + marketOutput).toLowerCase();\n\n  const scored = packages.map(pkg => {\n    let score = 0;\n    const allNames = [...pkg.send, ...pkg.get].map(p => p.name.toLowerCase());\n    for (const name of allNames) {\n      const firstName = name.split(' ').pop() || '';\n      if (newsText.includes(firstName) && firstName.length > 3) score += 3;\n    }\n    const r = parseFloat(pkg.ratio);\n    const positions = new Set([...pkg.send, ...pkg.get].map(p => p.pos).filter(p => p !== 'PICK'));\n    if (positions.size > 1) score += 1;\n    for (const p of [...pkg.send, ...pkg.get]) {\n      if (Math.abs(p.trend) > 300) score += 1;\n    }\n    if (pkg.get.every(p => p.pos === 'PICK')) score -= 5;\n\n    // Tier-specific scoring\n    const tier = getTier(pkg.ratio);\n    if (tier === 'safe') score += 2 - Math.abs(r - 0.98) * 20;\n    if (tier === 'speculative') {\n      const getTrend = pkg.get.reduce((sum, p) => sum + (p.trend || 0), 0);\n      if (getTrend > 200) score += 2; // Bonus for rising get-side\n    }\n    if (tier === 'smash') score += 1; // Slight bonus for bold plays\n\n    return { ...pkg, score, tier };\n  }).filter(pkg => pkg.tier != null);\n\n  // Select top packages per tier\n  const tiers = { safe: [], speculative: [], smash: [] };\n  for (const pkg of scored) {\n    if (pkg.tier && tiers[pkg.tier]) tiers[pkg.tier].push(pkg);\n  }\n  for (const t of Object.keys(tiers)) {\n    tiers[t].sort((a, b) => b.score - a.score);\n    const seen = new Set();\n    const top = [];\n    for (const pkg of tiers[t]) {\n      const sendKey = pkg.send.map(p => p.name).join('+');\n      if (seen.has(sendKey) && top.length > 0) continue;\n      seen.add(sendKey);\n      top.push(pkg);\n      if (top.length >= 3) break;\n    }\n    tiers[t] = top;\n  }\n\n  function formatPkgLine(pkg, label, idx) {\n    const sendDescs = pkg.send.map(p => {\n      const adj = tepAdjusted[(p.name || '').toLowerCase().trim()] || p.fc;\n      const tepNote = (p.pos || '').toUpperCase() === 'TE' ? ` [TEP-adj: ${adj}]` : '';\n      return `${p.name} (${p.pos}, FC: ${p.fc}${tepNote}, trend: ${p.trend > 0 ? '+' : ''}${p.trend})`;\n    }).join(' + ');\n    const getDescs = pkg.get.map(p => {\n      const adj = tepAdjusted[(p.name || '').toLowerCase().trim()] || p.fc;\n      const tepNote = (p.pos || '').toUpperCase() === 'TE' ? ` [TEP-adj: ${adj}]` : '';\n      return `${p.name} (${p.pos}, FC: ${p.fc}${tepNote}, trend: ${p.trend > 0 ? '+' : ''}${p.trend})`;\n    }).join(' + ');\n    return `Option ${label}${idx+1} [${pkg.type}]:\\n` +\n      `  SEND: ${sendDescs}\\n` +\n      `  GET: ${getDescs}\\n` +\n      `  Send Total: ${pkg.sendTotal} | Get Total: ${pkg.getTotal} | TEP-Adj Ratio: ${pkg.ratio}\\n`;\n  }\n\n  const hasAny = tiers.safe.length > 0 || tiers.speculative.length > 0 || tiers.smash.length > 0;\n  if (hasAny) {\n    tradePackages = '\\n\\n';\n    if (tiers.safe.length > 0) {\n      tradePackages += '=== \\U0001f7e2 SAFE SWAP OPTIONS (ratio 0.92-1.05) ===\\n';\n      tiers.safe.forEach((pkg, i) => { tradePackages += formatPkgLine(pkg, 'S', i) + '\\n'; });\n    }\n    if (tiers.speculative.length > 0) {\n      tradePackages += '=== \\U0001f7e1 SPECULATIVE BUY OPTIONS (ratio 0.80-0.92) ===\\n';\n      tiers.speculative.forEach((pkg, i) => { tradePackages += formatPkgLine(pkg, 'P', i) + '\\n'; });\n    }\n    if (tiers.smash.length > 0) {\n      tradePackages += '=== \\U0001f534 SMASH MOVE OPTIONS (ratio 1.05-1.25) ===\\n';\n      tiers.smash.forEach((pkg, i) => { tradePackages += formatPkgLine(pkg, 'M', i) + '\\n'; });\n    }\n  } else {\n    tradePackages = '\\n\\n=== PRE-VALIDATED TRADE PACKAGES ===\\nNo valid packages found today. Skip the ONE MOVE section or suggest a general direction without specific math.\\n';\n  }\n} catch(e) {\n  tradePackages = '\\n\\n=== PRE-VALIDATED TRADE PACKAGES ===\\nTrade package computation failed. Skip specific math in ONE MOVE.\\n';\n}\n\nreturn [{ json: {\n  newsOutput,\n  marketOutput,\n  prospectOutput: prospectOutput + fcQuickRef,\n  tradePackages\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "b59ff6a6-2261-4647-a98e-97c736b5ce91",
+      "name": "Assemble Master Input",
+      "position": [
+        2128,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "5NUzsUukNdBsJOSV",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/5NUzsUukNdBsJOSV",
+          "cachedResultName": "Sub - Master Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "id": "5f8e81d6-7d90-4303-af08-749b5aef4559",
+      "name": "Execute: Master Agent",
+      "position": [
+        2368,
+        624
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ═══════════════════════════════════════════════════════\n// Dynasty Daily v3 — Multi-Agent HTML Email Formatter\n// ═══════════════════════════════════════════════════════\n\nconst today = new Date().toISOString().split('T')[0];\n\n// ── Pipeline data (from sub-workflows via Wait: All Pipelines) ──\nconst pipelineData = $('Wait: All Pipelines').first().json;\nconst dateFull = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'America/Chicago' });\nconst ts = new Date().toLocaleString('en-US', { timeZone: 'America/Chicago', hour: 'numeric', minute: '2-digit', hour12: true });\n\n// ── Agent outputs ──\nlet masterData = {};\ntry { masterData = $('Execute: Master Agent').first().json; } catch(e) {}\nconst headline = masterData.headline || '';\nconst oneMove = masterData.one_move || '';\nconst buySellHold = masterData.buy_sell_hold || '';\n\nlet newsData = {};\ntry { newsData = $('Execute: News Agent').first().json; } catch(e) {}\nconst nflNews = newsData.nfl_news || '';\n\nlet marketData = {};\ntry { marketData = $('Execute: Market Agent').first().json; } catch(e) {}\nconst dynastyValues = marketData.dynasty_values || '';\nconst waiverCommentary = marketData.waiver_commentary || '';\n\n// Prospect Agent no longer produces visible section — data goes to DB\n\n// ── Raw data for tables ──\nlet prospects = [];\ntry { prospects = (pipelineData.prospectProfiles || []).filter(r => r && r.player_name); } catch(e) {}\nlet whitelist = [];\ntry { whitelist = (pipelineData.whitelist || []).filter(r => r && r.player_name); } catch(e) {}\n\nlet trending = {};\ntry { trending = pipelineData.trendingData || {}; } catch(e) {}\n\nlet fcValues = [];\ntry { fcValues = pipelineData.fcData?.fantasycalc?.allPlayers || []; } catch(e) {}\n\nlet streaks = [];\ntry { streaks = (pipelineData.signalStreaks || []).filter(r => r && r.player_name); } catch(e) {}\n\nlet articles = [];\ntry { articles = pipelineData.fullTextArticles || []; } catch(e) {}\n\n// ── Helpers ──\nfunction fc(name) {\n  if (!name) return null;\n  const m = fcValues.find(f => (f.player_name||f.name||'').toLowerCase() === name.toLowerCase());\n  return m ? (m.dynasty_value || m.value || null) : null;\n}\nfunction streak(name) {\n  const m = streaks.find(s => s.player_name?.toLowerCase() === name?.toLowerCase());\n  if (!m) return '';\n  const d = m.add_streak_days || m.drop_streak_days || m.days_on_adds || m.days_on_drops || 0;\n  return d >= 2 ? d + 'd' : '';\n}\nfunction fmtNum(n) { return n != null ? Number(n).toLocaleString() : '—'; }\n\n// ── md2html ──\nfunction md2html(text) {\n  if (!text) return '<p style=\"color:#94a3b8;font-style:italic;\">No data available.</p>';\n  return text\n    .replace(/\\*\\*([^*]+)\\*\\*/g, '<strong style=\"color:#e2e8f0;\">$1</strong>')\n    .split(/\\n/).filter(l => l.trim()).map(l => {\n      const t = l.trim();\n      if (t.startsWith('🟢')) return `<div style=\"padding:10px 14px;margin:6px 0;background:rgba(74,222,128,0.08);border-left:3px solid #4ade80;border-radius:0 6px 6px 0;font-size:14px;line-height:1.8;color:#cbd5e1;\">${t}</div>`;\n      if (t.startsWith('🔴')) return `<div style=\"padding:10px 14px;margin:6px 0;background:rgba(248,113,113,0.08);border-left:3px solid #f87171;border-radius:0 6px 6px 0;font-size:14px;line-height:1.8;color:#cbd5e1;\">${t}</div>`;\n      if (t.match(/^(🟢\\s*)?BUY[:\\-\\u2014]/i)) return `<div style=\"padding:10px 14px;margin:6px 0;background:rgba(74,222,128,0.08);border-left:3px solid #4ade80;border-radius:0 6px 6px 0;font-size:14px;line-height:1.8;color:#cbd5e1;\">${t}</div>`;\n      if (t.match(/^(🔴\\s*)?SELL[:\\-\\u2014]/i)) return `<div style=\"padding:10px 14px;margin:6px 0;background:rgba(248,113,113,0.08);border-left:3px solid #f87171;border-radius:0 6px 6px 0;font-size:14px;line-height:1.8;color:#cbd5e1;\">${t}</div>`;\n      if (t.match(/^(🟡\\s*)?HOLD[:\\-\\u2014]/i)) return `<div style=\"padding:10px 14px;margin:6px 0;background:rgba(250,204,21,0.08);border-left:3px solid #facc15;border-radius:0 6px 6px 0;font-size:14px;line-height:1.8;color:#cbd5e1;\">${t}</div>`;\n      if (t.match(/^Buy[\\u2014\\-]/)) return `<div style=\"padding:10px 14px;margin:6px 0;background:rgba(74,222,128,0.08);border-left:3px solid #4ade80;border-radius:0 6px 6px 0;font-size:14px;line-height:1.8;color:#cbd5e1;\">${t}</div>`;\n      if (t.match(/^Sell[\\u2014\\-]/)) return `<div style=\"padding:10px 14px;margin:6px 0;background:rgba(248,113,113,0.08);border-left:3px solid #f87171;border-radius:0 6px 6px 0;font-size:14px;line-height:1.8;color:#cbd5e1;\">${t}</div>`;\n      if (t.match(/^Hold[\\u2014\\-]/)) return `<div style=\"padding:10px 14px;margin:6px 0;background:rgba(250,204,21,0.08);border-left:3px solid #facc15;border-radius:0 6px 6px 0;font-size:14px;line-height:1.8;color:#cbd5e1;\">${t}</div>`;\n      if (t.startsWith('🟡')) return `<div style=\"padding:10px 14px;margin:6px 0;background:rgba(250,204,21,0.08);border-left:3px solid #facc15;border-radius:0 6px 6px 0;font-size:14px;line-height:1.8;color:#cbd5e1;\">${t}</div>`;\n      if (t.startsWith('•') || t.startsWith('-') || t.startsWith('–') || t.match(/^\\d+\\./))\n        return `<div style=\"padding:8px 14px;margin:4px 0;background:rgba(255,255,255,0.03);border-left:3px solid #334155;border-radius:0 6px 6px 0;font-size:14px;line-height:1.8;color:#cbd5e1;\">${t.replace(/^[•\\-–]\\s*/, '').replace(/^\\d+\\.\\s*/, '')}</div>`;\n      if (t.match(/^\\*?\\*?Send:?\\*?\\*?/i) || t.match(/^\\*?\\*?GET:?\\*?\\*?/i))\n        return `<div style=\"padding:6px 0;font-size:15px;line-height:1.8;color:#e2e8f0;font-weight:600;\">${t}</div>`;\n      if (t.match(/^\\*?\\*?Why/i) || t.match(/^\\*?\\*?Math/i) || t.match(/^\\*?\\*?Confidence/i) || t.match(/^\\*?\\*?Window/i))\n        return `<p style=\"margin:6px 0;font-size:14px;line-height:1.8;color:#94a3b8;\">${t}</p>`;\n      return `<p style=\"margin:6px 0;font-size:14px;line-height:1.8;color:#cbd5e1;\">${t}</p>`;\n    }).join('');\n}\n\nfunction hdr(emoji, num, title) {\n  return `<div style=\"margin:36px 0 18px;padding:14px 20px;background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:10px;border-left:4px solid #f59e0b;\">\n    <span style=\"font-size:12px;color:#f59e0b;font-weight:700;letter-spacing:1.5px;\">${num}</span>\n    <span style=\"font-size:20px;margin:0 8px;\">${emoji}</span>\n    <span style=\"font-size:17px;color:#f1f5f9;font-weight:700;\">${title}</span>\n  </div>`;\n}\n\n// ── Trending tables ──\n\nfunction getWaiverReason(p, isAdd) {\n  const name = (p.player_name || p.name || '').toLowerCase();\n  const lastName = name.split(' ').pop() || '';\n  const pos = (p.position || '').toUpperCase();\n  const count = isAdd ? (p.add_count || 0) : (p.drop_count || 0);\n  const fcv = fc(p.player_name || p.name);\n  const sk = streak(p.player_name || p.name);\n  const skDays = sk ? parseInt(sk) : 0;\n\n  // Season awareness\n  const month = new Date().getMonth() + 1;\n  const isOffseason = month >= 2 && month <= 8;\n\n  // FC player lookup\n  const fcPlayer = fcValues.find(f => (f.player_name || f.name || '').toLowerCase() === name);\n  const age = fcPlayer ? (fcPlayer.age || null) : null;\n  const isLikelyRetired = (fcv === null || fcv === undefined) && !fcPlayer;\n  const isAging = age && age >= 33;\n\n  // ── NEWS CROSS-REFERENCE (highest priority) ──\n  // Scan today's articles for this player + extract context\n  let newsContext = null;\n  for (const a of articles) {\n    const title = (a.title || '').toLowerCase();\n    const body = (a.extracted_text || a.description || '').toLowerCase();\n    const text = title + ' ' + body;\n\n    // Check if this player is actually mentioned\n    const mentioned = (lastName.length > 3 && title.includes(lastName)) || text.includes(name);\n    if (!mentioned) continue;\n\n    // Priority 1: Death/passing (MUST be first — cannot mislabel)\n    if (/\\b(died|death|dead|passed away|passing of|rip|killed|found dead)\\b/i.test(text)) {\n      newsContext = 'RIP \\u{1F54A}\\uFE0F';\n      break; // Highest priority, stop searching\n    }\n    // Priority 2: Injury surgery/season-ending\n    if (/\\b(acl|surgery|torn|season.ending|out for (the )?season|injured reserve)\\b/i.test(text)) {\n      newsContext = isAdd ? 'Handcuff — starter injured' : 'Injury — season lost';\n      break;\n    }\n    // Priority 3: Trade/release/cut\n    if (/\\b(traded|waived|released|cut|designated.*post.june)\\b/i.test(text)) {\n      newsContext = isAdd ? 'New opportunity — trade/signing' : 'Released/traded';\n      break;\n    }\n    // Priority 4: Retirement\n    if (/\\b(retire[ds]?|retirement|hang.?it.?up|calling it)\\b/i.test(text)) {\n      newsContext = isAdd ? 'Replacement for retiree' : 'Retiring \\u{1F44B}';\n      break;\n    }\n    // Priority 5: Free agency/signing\n    if (/\\b(free agent|free agency|signed with|signing|re.signed)\\b/i.test(text)) {\n      newsContext = isAdd ? 'New team/role — FA signing' : 'FA uncertainty';\n      break;\n    }\n    // Priority 6: General mention (no specific event detected)\n    if (!newsContext) {\n      newsContext = 'In today\\u2019s news';\n    }\n  }\n\n  // If news found specific context, use it\n  if (newsContext) return newsContext;\n\n  // ── IMPROVED PATTERN-BASED FALLBACKS ──\n  if (isAdd) {\n    if (fcPlayer && (fcPlayer.trend_30day || 0) > 100) {\n      return 'FC value rising (+' + fcPlayer.trend_30day + ') \\u2014 market momentum';\n    }\n    if (pos === 'QB' && fcv != null && fcv < 500) {\n      return skDays >= 5 ? 'Cheap SF QB \\u2014 ' + skDays + '-day add streak' : 'SF QB speculation';\n    }\n    if (pos === 'QB' && fcv != null && fcv >= 500) {\n      return skDays >= 5 ? 'SF depth \\u2014 path-to-start chatter' : 'SF QB depth play';\n    }\n    if (pos === 'TE' && fcv != null) {\n      return skDays >= 5 ? 'TEP dart throw \\u2014 ' + skDays + '-day streak' : 'TEP speculative add';\n    }\n    if (skDays >= 7) return skDays + '-day add streak \\u2014 sustained league interest';\n    if (skDays >= 4) return 'Building momentum \\u2014 ' + skDays + '-day streak';\n    if (fcv != null && fcv < 100) return 'Deep sleeper stash';\n    if (fcv != null && fcv >= 100 && fcv < 500) return 'Roster speculation';\n    return 'Offseason roster churn';\n  } else {\n    if (isAging && age) return 'Age ' + age + ' \\u2014 declining dynasty asset';\n    if (isLikelyRetired) return 'Likely retired \\u2014 roster cleanup';\n    if (fcPlayer && (fcPlayer.trend_30day || 0) < -100) {\n      return 'FC value falling (' + fcPlayer.trend_30day + ') \\u2014 losing faith';\n    }\n    if (fcv != null && fcv < 50) return 'Roster clogger \\u2014 clearing space';\n    if (skDays >= 7) return skDays + '-day exit trend';\n    if (skDays >= 4) return 'Sustained drops \\u2014 ' + skDays + ' days';\n    if (fcv != null && fcv > 200) return 'Surprising drop \\u2014 potential buy-low';\n    return 'Offseason roster cleanup';\n  }\n}\n\nfunction trendTable(items, countKey, accentColor, bgTint) {\n  if (!items || !items.length) return '<p style=\"color:#64748b;font-size:13px;\">No data yet.</p>';\n  const th = 'padding:10px 10px;font-size:11px;font-weight:700;color:' + accentColor + ';text-transform:uppercase;letter-spacing:0.8px;border-bottom:2px solid #334155;';\n  let rows = items.slice(0,10).map((item, i) => {\n    const bg = i%2===0 ? 'rgba(' + bgTint + ',0.04)' : 'transparent';\n    const td = 'padding:8px 10px;font-size:13px;color:#e2e8f0;border-bottom:1px solid rgba(255,255,255,0.06);';\n    const fcv = fc(item.name);\n    const sk = streak(item.name);\n    return '<tr style=\"background:' + bg + ';\"><td style=\"' + td + 'text-align:center;color:#64748b;\">' + (i+1) + '</td><td style=\"' + td + 'font-weight:600;\">' + item.name + '</td><td style=\"' + td + 'text-align:center;\">' + (item.position||'-') + '</td><td style=\"' + td + 'text-align:center;\">' + (item.team||'-') + '</td><td style=\"' + td + 'text-align:right;color:' + accentColor + ';font-weight:700;\">' + fmtNum(item[countKey]||0) + '</td><td style=\"' + td + 'text-align:right;\">' + (fcv != null ? fmtNum(fcv) : '—') + '</td><td style=\"' + td + 'text-align:center;color:#f59e0b;font-weight:600;\">' + (sk ? '🔥 '+sk : '') + '</td><td style=\"' + td + 'text-align:left;color:#94a3b8;font-size:11px;\">' + getWaiverReason(item, countKey==='add_count') + '</td></tr>';\n  }).join('');\n  return '<table style=\"width:100%;border-collapse:collapse;margin:4px 0;border-radius:8px;overflow:hidden;background:#1e293b;\"><tr style=\"background:#0f172a;\"><th style=\"' + th + 'text-align:center;width:30px;\">#</th><th style=\"' + th + '\">Player</th><th style=\"' + th + 'text-align:center;\">Pos</th><th style=\"' + th + 'text-align:center;\">Team</th><th style=\"' + th + 'text-align:right;\">' + (countKey==='add_count'?'Adds':'Drops') + '</th><th style=\"' + th + 'text-align:right;\">FC</th><th style=\"' + th + 'text-align:center;\">Streak</th><th style=\"' + th + 'text-align:left;\">Why</th></tr>' + rows + '</table>';\n}\n\nconst addsHtml = trendTable(trending.trending_adds, 'add_count', '#4ade80', '74,222,128');\nconst dropsHtml = trendTable(trending.trending_drops, 'drop_count', '#f87171', '248,113,113');\n\n// ── Sources ──\nconst srcMap = {};\nfor (const a of articles) { const s = a.source || 'Other'; if (!srcMap[s]) srcMap[s] = []; srcMap[s].push({t: a.title, u: a.link}); }\nlet srcHtml = Object.entries(srcMap).map(([src, items]) => {\n  const links = items.slice(0,4).map(i => i.u ? '<a href=\"' + i.u + '\" style=\"color:#64748b;text-decoration:none;border-bottom:1px dotted #475569;\">' + (i.t||'').substring(0,55) + '</a>' : '').filter(Boolean).join(' · ');\n  return '<span style=\"color:#94a3b8;font-weight:600;\">' + src + ':</span> ' + links;\n}).join('<br/>');\n\nconst enrichedCount = articles.filter(a => a.has_full_text).length;\nconst boardCount = whitelist.length || prospects.length;\nconst statsBar = articles.length + ' articles · ' + enrichedCount + ' full-text · ' + fcValues.length + ' FC values · ' + boardCount + ' prospects tracked';\n\n// ── Agent status ──\nconst agentStatus = [\n  { name: 'News', ok: newsData.success !== false },\n  { name: 'Market', ok: marketData.success !== false },\n    { name: 'Master', ok: masterData.success !== false },\n].map(a => (a.ok ? '✅' : '⚠️') + ' ' + a.name).join(' · ');\n\n// ══════════════ ASSEMBLE EMAIL ══════════════\n\n// ══════════════════════════════════════════════════════════\n// PROSPECT BIG BOARD — always rendered from database\n// ══════════════════════════════════════════════════════════\n\nfunction buildProspectBoard() {\n  const positionCuts = { QB: 5, RB: 10, WR: 20, TE: 6 };\n  const positionOrder = ['QB', 'RB', 'WR', 'TE'];\n  const posColors = {\n    QB: { header: '#c62828', label: 'QUARTERBACKS' },\n    RB: { header: '#2e7d32', label: 'RUNNING BACKS' },\n    WR: { header: '#1565c0', label: 'WIDE RECEIVERS' },\n    TE: { header: '#f57f17', label: 'TIGHT ENDS' }\n  };\n  const tierColors = {\n    ELITE: '#7c3aed', DAY1: '#2563eb', DAY2: '#059669',\n    DAY3: '#d97706', FLIER: '#6b7280'\n  };\n\n  // Build lookups from prospect_profiles\n  const profileMap = {};\n  try {\n    const profiles = prospects || [];\n    profiles.forEach(p => {\n      const n = (p.player_name || '').toLowerCase();\n      profileMap[n] = p;\n    });\n  } catch(e) {}\n\n  const data = whitelist.length > 0 ? whitelist : [];\n  if (data.length === 0) return '<p style=\"color:#888;\">Prospect data unavailable</p>';\n\n  // Group by position, sort by FP rank\n  const grouped = {};\n  for (const p of data) {\n    const pos = (p.position || '').toUpperCase();\n    if (!grouped[pos]) grouped[pos] = [];\n    grouped[pos].push(p);\n  }\n  for (const pos of Object.keys(grouped)) {\n    grouped[pos].sort((a, b) => (a.fantasypros_rank || 999) - (b.fantasypros_rank || 999));\n    grouped[pos] = grouped[pos].slice(0, positionCuts[pos] || 5);\n  }\n\n  let html = '';\n  let totalShown = 0;\n\n  for (const pos of positionOrder) {\n    const players = grouped[pos] || [];\n    if (players.length === 0) continue;\n    const cfg = posColors[pos];\n\n    // Position header bar\n    html += '<div style=\"background:' + cfg.header + ';color:#fff;padding:8px 14px;border-radius:6px 6px 0 0;font-weight:800;font-size:13px;letter-spacing:2px;margin-top:20px;\">' + cfg.label + '</div>';\n    html += '<div style=\"background:#1e1e30;border:1px solid #333;border-top:none;border-radius:0 0 6px 6px;padding:12px 16px;\">';\n\n    for (let i = 0; i < players.length; i++) {\n      const p = players[i];\n      const rank = i + 1;\n      const name = p.player_name || 'Unknown';\n      const school = p.school || '';\n      const round = p.consensus_round || '';\n      const tier = (p.tier || '').toUpperCase();\n      const tierColor = tierColors[tier] || '#6b7280';\n      const age = p.age ? p.age + 'y' : '';\n\n      // Pull enrichment from prospect_profiles\n      const profile = profileMap[name.toLowerCase()] || {};\n      const ht = profile.height || '';\n      const wt = profile.weight ? profile.weight + ' lbs' : '';\n      const comp = profile.consensus_comp || '';\n      const hasArticle = (profile.total_mentions || 0) > 0;\n      const isUpdatedToday = profile.last_updated === today;\n\n      // Build scouting notes — prefer profile notes, fall back to whitelist\n      const profileNotes = profile.notes || '';\n      const fpNotes = p.fantasypros_notes || '';\n      const wlNotes = p.notes || '';\n      const allNotes = profileNotes || fpNotes || wlNotes || '';\n\n      const isLast = (i === players.length - 1);\n      const borderStyle = isLast ? '' : 'border-bottom:1px solid #2a2a40;';\n\n      // Row container\n      html += '<div style=\"padding:10px 0;' + borderStyle + '\">';\n\n      // Header line: No. X | Name | HxW | School | Rd X | TIER | Age | Comp | Article\n      html += '<div style=\"font-size:14px;color:#f1f5f9;\">';\n      html += '<strong style=\"color:#fff;\">No. ' + rank + ' | ' + name + '</strong>';\n      \n      // Height/weight if available\n      if (ht) {\n        html += '<span style=\"color:#94a3b8;\"> | ' + ht;\n        if (wt) html += ' ' + wt;\n        html += '</span>';\n      }\n      \n      if (school) html += '<span style=\"color:#94a3b8;\"> | ' + school + '</span>';\n      if (round) html += '<span style=\"color:#94a3b8;\"> | Rd ' + round + '</span>';\n      if (tier) html += ' <span style=\"color:' + tierColor + ';font-weight:700;font-size:12px;\">' + tier + '</span>';\n      if (age) html += '<span style=\"color:#94a3b8;\"> | ' + age + '</span>';\n      if (comp) html += '<span style=\"color:#94a3b8;\"> | </span><span style=\"font-size:12px;color:' + tierColor + ';font-style:italic;\">\\u{1F3C8} ' + comp + '</span>';\n      if (hasArticle) html += '<span style=\"color:#f59e0b;font-size:11px;\"> \\u{1F4F0}</span>';\n      if (isUpdatedToday) html += '<span style=\"color:#22d3ee;font-size:11px;\"> \\u{1F195}</span>';\n      \n      html += '</div>';\n\n      // Scouting notes paragraph\n      if (allNotes) {\n        html += '<div style=\"font-size:12.5px;color:#94a3b8;line-height:1.6;margin-top:6px;\">' + allNotes + '</div>';\n      } else {\n        html += '<div style=\"font-size:12.5px;color:#64748b;font-style:italic;margin-top:6px;\">Scouting profile pending \\u2014 check back tomorrow.</div>';\n      }\n\n      if (isUpdatedToday && profile.last_update_summary) {\n        html += '<div style=\"font-size:12px;color:#22d3ee;margin-top:6px;padding:6px 10px;background:rgba(34,211,238,0.08);border-left:3px solid #22d3ee;border-radius:0 4px 4px 0;\">\\u{1F195} Today: ' + profile.last_update_summary + '</div>';\n      }\n      html += '</div>'; // close row\n      totalShown++;\n    }\n\n    html += '</div>'; // close position card\n  }\n\n  // Legend\n  html += '<div style=\"margin-top:16px;padding:10px 14px;font-size:11px;color:#64748b;text-align:center;\">';\n  html += '<span style=\"color:#f59e0b;\">\\u{1F4F0}</span> Article mentions &nbsp;|&nbsp;';\n  html += '<span style=\"color:#7c3aed;font-weight:700;\">ELITE</span> &nbsp;';\n  html += '<span style=\"color:#2563eb;font-weight:700;\">DAY1</span> &nbsp;';\n  html += '<span style=\"color:#059669;font-weight:700;\">DAY2</span> &nbsp;';\n  html += '<span style=\"color:#d97706;font-weight:700;\">DAY3</span> &nbsp;';\n  html += '<span style=\"color:#6b7280;font-weight:700;\">FLIER</span> &nbsp;|&nbsp;';\n  html += totalShown + ' prospects across 4 positions';\n  html += '</div>';\n\n  return html;\n}\n\nconst html = `<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body style=\"margin:0;padding:0;background:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;\">\n<div style=\"max-width:680px;margin:0 auto;background:#1a1a2e;\">\n\n<div style=\"background:linear-gradient(160deg,#0f172a 0%,#1e293b 40%,#0f172a 100%);padding:40px 28px 32px;text-align:center;border-bottom:3px solid #f59e0b;\">\n  <div style=\"font-size:13px;color:#f59e0b;font-weight:700;letter-spacing:3px;\">🏈 DYNASTY DAILY v3</div>\n  <div style=\"font-size:28px;color:#f1f5f9;font-weight:800;letter-spacing:1px;\">Your Daily Edge</div>\n  <div style=\"margin-top:10px;color:#64748b;font-size:13px;\">${dateFull} · ${ts} CT</div>\n  <div style=\"margin-top:6px;color:#475569;font-size:11px;\">SF · TEP · 12-team · ${statsBar}</div>\n  <div style=\"margin-top:4px;color:#475569;font-size:10px;\">${agentStatus}</div>\n</div>\n\n<div style=\"padding:0 24px;\">\n\n${headline ? '<div style=\"margin:24px 0 20px;padding:20px 24px;background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid #334155;border-radius:12px;\">' + md2html(headline) + '</div>' : ''}\n\n${hdr('📰','①','NFL NEWS')}\n<div style=\"padding:4px 0;\">${md2html(nflNews)}</div>\n\n${hdr('📋','②','PROSPECT BIG BOARD')}\n<div style=\"padding:4px 0;\">${buildProspectBoard()}</div>\n\n${dynastyValues ? hdr('📊','③','DYNASTY VALUES') + '<div style=\"padding:4px 0;\">' + md2html(dynastyValues) + '</div>' : ''}\n\n${hdr('🔄','④','ONE MOVE')}\n<div style=\"padding:16px 20px;background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid #334155;border-radius:10px;margin:4px 0;\">${md2html(oneMove)}</div>\n\n${buySellHold ? hdr('💰','⑤','BUY / SELL / HOLD') + '<div style=\"padding:4px 0;\">' + md2html(buySellHold) + '</div>' : ''}\n\n${hdr('🔍','⑥','WAIVER WIRE')}\n<div style=\"margin:12px 0;\"><div style=\"font-size:12px;font-weight:700;color:#4ade80;letter-spacing:1px;margin-bottom:6px;\">▲ TOP ADDS (24H)</div>${addsHtml}</div>\n<div style=\"margin:20px 0 12px;\"><div style=\"font-size:12px;font-weight:700;color:#f87171;letter-spacing:1px;margin-bottom:6px;\">▼ TOP DROPS (24H)</div>${dropsHtml}</div>\n<div style=\"padding:12px 0;\">${md2html(waiverCommentary)}</div>\n\n${hdr('📚','⑦','SOURCES')}\n<div style=\"padding:8px 0 24px;font-size:11px;line-height:2;color:#64748b;\">${srcHtml || ''}</div>\n\n</div>\n\n<div style=\"background:#0f172a;padding:20px 28px;text-align:center;border-top:1px solid #1e293b;\">\n  <div style=\"font-size:11px;color:#f59e0b;font-weight:700;letter-spacing:2px;\">DYNASTY DAILY v3</div>\n  <div style=\"font-size:10px;color:#475569;margin-top:4px;\">4-Agent Architecture · Sleeper · FantasyCalc · Supabase</div>\n</div>\n\n</div></body></html>`;\n\nlet subjectHl = '';\nconst fl = (headline || nflNews || '').split('\\\\n').find(l => l.trim().length > 15);\nif (fl) subjectHl = fl.replace(/[*#•\\\\[\\\\]🟢🔴🟡]/g, '').trim().substring(0, 60);\n\nreturn [{ json: {\n  emailHtml: html,\n  emailSubject: '🏈 Dynasty Daily v3 — ' + today + (subjectHl ? ' — ' + subjectHl : ''),\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "e9891f4d-3d34-485d-aea4-dea802105264",
+      "name": "Format HTML Email",
+      "position": [
+        2608,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "brandonhenes@gmail.com",
+        "subject": "={{ $json.emailSubject }}",
+        "message": "={{ $json.emailHtml }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "41f4ec7b-3290-42d5-87b2-e61f6cc6544b",
+      "name": "Gmail Send",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2848,
+        624
+      ],
+      "webhookId": "0361bd34-23c2-49c3-876c-ce112c1d8482",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qtXaMbvuaYOOMAGb",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://afbntzoibafahnduxixb.supabase.co/rest/v1/player_mentions?on_conflict=mention_date,player_name,article_url",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal,resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Extract Mentions').first().json.mentions) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "b829a9dc-50b2-46a3-8805-411324615ad6",
+      "name": "Write Player Mentions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1232,
+        208
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://afbntzoibafahnduxixb.supabase.co/rest/v1/nfl_transactions?on_conflict=transaction_date,player_name,transaction_type",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal,resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Extract NFL Transactions').first().json.transactions) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "0cac091e-fbc2-4c50-97fc-1a1c13135558",
+      "name": "Write NFL Transactions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1232,
+        32
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://afbntzoibafahnduxixb.supabase.co/rest/v1/prospect_profiles?on_conflict=player_name",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal,resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.prospect_updates) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "40a02c76-6b5d-46b9-8700-4703d6087764",
+      "name": "Write Prospect Profiles",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2832,
+        1184
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const pipe = $('Wait: All Pipelines').first().json;\nconst articles = pipe.fullTextArticles || [];\n\n// Get FC values for known player names\nconst fcValues = pipe.fcData?.fc_values || pipe.fcData?.fantasycalc?.allPlayers || [];\n\n// Build a set of known player names from FC data\nconst knownPlayers = new Map();\nfor (const p of fcValues) {\n  if (!p.is_pick && p.player_name && p.player_name.length > 3) {\n    knownPlayers.set(p.player_name.toLowerCase(), {\n      name: p.player_name,\n      position: p.position,\n    });\n  }\n}\n\nconst today = new Date().toISOString().split('T')[0];\nconst mentions = [];\nconst seen = new Set();\n\nfor (const article of articles) {\n  const text = (article.title || '') + ' ' + (article.extracted_text || '');\n  const textLower = text.toLowerCase();\n\n  for (const [nameLower, info] of knownPlayers) {\n    if (textLower.includes(nameLower)) {\n      const key = today + '|' + info.name + '|' + (article.link || '');\n      if (seen.has(key)) continue;\n      seen.add(key);\n\n      const idx = textLower.indexOf(nameLower);\n      const start = Math.max(0, text.lastIndexOf('.', idx) + 1);\n      const end = Math.min(text.length, text.indexOf('.', idx + nameLower.length) + 1 || text.length);\n      let quote = text.substring(start, end).trim();\n      if (quote.length > 2000) quote = quote.substring(0, 2000);\n\n      const context = text.substring(Math.max(0, idx - 200), Math.min(text.length, idx + 200)).toLowerCase();\n      let sentiment = 'neutral';\n      const posWords = /breakout|elite|top|star|upside|impressive|dominant|explosive|underrated/;\n      const negWords = /bust|concern|injury|limited|decline|risk|drop|overrated|disappointing/;\n      if (posWords.test(context) && !negWords.test(context)) sentiment = 'positive';\n      else if (negWords.test(context) && !posWords.test(context)) sentiment = 'negative';\n      else if (posWords.test(context) && negWords.test(context)) sentiment = 'mixed';\n\n      mentions.push({\n        mention_date: today,\n        player_name: info.name,\n        position: info.position,\n        source: article.source,\n        article_url: article.link || null,\n        article_title: article.title || null,\n        key_quote: quote || null,\n        sentiment: sentiment,\n      });\n    }\n  }\n}\n\nreturn [{ json: { mentions: mentions, mention_count: mentions.length } }];"
+      },
+      "id": "dcab5853-0fa1-4cdd-9720-bb9023d2d666",
+      "name": "Extract Mentions",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const pipe = $('Wait: All Pipelines').first().json;\nconst articles = pipe.fullTextArticles || [];\nconst today = new Date().toISOString().split('T')[0];\n\nconst transactionPatterns = [\n  { regex: /(\\w[\\w'\\-\\.\\s]{2,30})\\s+(?:has been\\s+)?released\\s+by\\s+(?:the\\s+)?(\\w[\\w\\s]+)/gi, type: 'release' },\n  { regex: /(\\w[\\w'\\-\\.\\s]{2,30})\\s+(?:has\\s+)?signed?\\s+with\\s+(?:the\\s+)?(\\w[\\w\\s]+)/gi, type: 'signing' },\n  { regex: /(\\w[\\w'\\-\\.\\s]{2,30})\\s+(?:has been\\s+)?traded\\s+to\\s+(?:the\\s+)?(\\w[\\w\\s]+)/gi, type: 'trade' },\n  { regex: /(\\w[\\w'\\-\\.\\s]{2,30})\\s+(?:has\\s+)?(?:torn|tore|suffered)\\s+([\\w\\s]+(?:ACL|MCL|achilles|injury))/gi, type: 'injury' },\n  { regex: /(\\w[\\w'\\-\\.\\s]{2,30})\\s+(?:has\\s+)?(?:announced|announces)\\s+(?:his\\s+)?retirement/gi, type: 'retirement' },\n  { regex: /(\\w[\\w'\\-\\.\\s]{2,30})\\s+(?:has been\\s+)?waived\\s+by\\s+(?:the\\s+)?(\\w[\\w\\s]+)/gi, type: 'release' },\n  { regex: /(\\w[\\w'\\-\\.\\s]{2,30})\\s+(?:has been\\s+)?suspended/gi, type: 'suspension' },\n  { regex: /(\\w[\\w'\\-\\.\\s]{2,30})\\s+(?:receives?|given|gets?)\\s+(?:the\\s+)?franchise tag/gi, type: 'extension' },\n];\n\nconst transactions = [];\nconst seen = new Set();\n\nfor (const article of articles) {\n  const text = (article.title || '') + ' ' + (article.extracted_text || '');\n  for (const pattern of transactionPatterns) {\n    pattern.regex.lastIndex = 0;\n    let match;\n    while ((match = pattern.regex.exec(text)) !== null) {\n      const playerName = match[1].trim();\n      if (playerName.length < 4 || /^(the|and|but|for|this|that|with)$/i.test(playerName)) continue;\n      const key = playerName + '|' + pattern.type;\n      if (seen.has(key)) continue;\n      seen.add(key);\n      transactions.push({\n        transaction_date: today,\n        player_name: playerName,\n        position: null,\n        from_team: null,\n        to_team: match[2] ? match[2].trim().substring(0, 30) : null,\n        transaction_type: pattern.type,\n        details: article.title || '',\n        source_url: article.link || null,\n        source_title: article.title || null,\n      });\n    }\n  }\n}\n\nreturn [{ json: { transactions: transactions, transaction_count: transactions.length } }];"
+      },
+      "id": "c2fab4d6-74a9-4393-84b5-b85c753ff957",
+      "name": "Extract NFL Transactions",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Prospect Agent DB_UPDATES output and prepare Supabase upsert\nconst today = new Date().toISOString().split('T')[0];\n\n// NFL veterans blocklist\nconst nflPlayersNotProspects = new Set([\n  'jayden daniels', 'caleb williams', 'drake maye', 'marvin harrison',\n  'malik nabers', 'brock bowers', 'rome odunze', 'bo nix',\n  'quinn ewers', 'jaxson dart', 'keon coleman', 'cam ward',\n  'shedeur sanders', 'travis hunter',\n]);\n\n// Get agent output — now db_updates instead of prospect_intel\nconst agentJson = $('Execute: Prospect Agent').first().json;\nconst dbUpdatesText = agentJson.db_updates || agentJson.prospect_intel || agentJson.raw || '';\n\nconst pipe = $('Wait: All Pipelines').first().json;\nlet existingProspects = (pipe.prospectProfiles || []).filter(r => r && r.player_name);\nconst existingNames = new Set(existingProspects.map(p => p.player_name?.toLowerCase()));\n\nconst updates = [];\nconst lines = dbUpdatesText.split('\\n');\n\nfor (const line of lines) {\n  const trimmed = line.trim();\n  if (!trimmed) continue;\n\n  // Parse UPDATE lines: UPDATE: Player Name | summary: ... | field: ... | value: ...\n  if (trimmed.startsWith('UPDATE:')) {\n    const parts = trimmed.substring(7).split('|').map(s => s.trim());\n    if (parts.length < 2) continue;\n    const playerName = parts[0].trim();\n    if (nflPlayersNotProspects.has(playerName.toLowerCase())) continue;\n\n    const update = { player_name: playerName, last_updated: today };\n    for (const part of parts.slice(1)) {\n      const colonIdx = part.indexOf(':');\n      if (colonIdx === -1) continue;\n      const key = part.substring(0, colonIdx).trim().toLowerCase();\n      const val = part.substring(colonIdx + 1).trim();\n      if (key === 'summary') update.last_update_summary = val;\n      else if (key === 'field' && val === 'scouting_notes') { /* next part has value */ }\n      else if (key === 'value') update.notes = val;\n      else if (key === 'scouting_notes') update.notes = val;\n      else if (key === 'consensus_comp') update.consensus_comp = val;\n      else if (key === 'key_strengths') update.key_strengths = val.split(',').map(s => s.trim());\n      else if (key === 'key_concerns') update.key_concerns = val.split(',').map(s => s.trim());\n    }\n\n    const existing = existingProspects.find(p => p.player_name?.toLowerCase() === playerName.toLowerCase());\n    if (existing) {\n      update.total_mentions = (existing.total_mentions || 0) + 1;\n      if (!update.notes && existing.notes) update.notes = existing.notes;\n      if (!update.consensus_comp && existing.consensus_comp) update.consensus_comp = existing.consensus_comp;\n    }\n    updates.push(update);\n  }\n\n  // Parse NEW lines: NEW: Player Name | position | school | summary: ... | ...\n  if (trimmed.startsWith('NEW:')) {\n    const parts = trimmed.substring(4).split('|').map(s => s.trim());\n    if (parts.length < 3) continue;\n    const playerName = parts[0].trim();\n    if (nflPlayersNotProspects.has(playerName.toLowerCase())) continue;\n\n    const update = {\n      player_name: playerName,\n      position: parts[1] || null,\n      school: parts[2] || null,\n      total_mentions: 1,\n      first_seen: today,\n      last_updated: today\n    };\n    for (const part of parts.slice(3)) {\n      const colonIdx = part.indexOf(':');\n      if (colonIdx === -1) continue;\n      const key = part.substring(0, colonIdx).trim().toLowerCase();\n      const val = part.substring(colonIdx + 1).trim();\n      if (key === 'summary') update.last_update_summary = val;\n      else if (key === 'scouting_notes') update.notes = val;\n      else if (key === 'height') update.height = val;\n      else if (key === 'weight') update.weight = val;\n      else if (key === 'consensus_comp') update.consensus_comp = val;\n      else if (key === 'key_strengths') update.key_strengths = val.split(',').map(s => s.trim());\n      else if (key === 'key_concerns') update.key_concerns = val.split(',').map(s => s.trim());\n    }\n    updates.push(update);\n  }\n}\n\nreturn [{ json: { prospect_updates: updates, update_count: updates.length } }];"
+      },
+      "id": "9dbc7ebb-dbd4-4d81-a845-bf6540906b45",
+      "name": "Update Prospect Profiles",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2496,
+        1184
+      ]
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "id": "624d503d-c042-41b4-b788-06f7c157a425",
+      "name": "Limit 1 Email",
+      "position": [
+        2736,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_RSS",
+          "mode": "list",
+          "cachedResultName": "Sub - RSS Pipeline"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "id": "6d8e5a17-0830-497b-9de2-4ec0a5678a87",
+      "name": "Execute: RSS Pipeline",
+      "position": [
+        200,
+        -120
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_DATA",
+          "mode": "list",
+          "cachedResultName": "Sub - Data Pipeline"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "id": "0354b757-9915-48d0-bfdf-c505d13b295e",
+      "name": "Execute: Data Pipeline",
+      "position": [
+        200,
+        120
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 2,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "id": "24aab065-ee3e-4d8c-b678-dc515e4ceaa6",
+      "name": "Wait: All Pipelines",
+      "position": [
+        500,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const newsResult = $input.first().json;\nconst entries = newsResult.news_entries || [];\n\n// If no structured entries, pass through unchanged\nif (!entries.length) {\n  return [$input.first()];\n}\n\n// Get FC data for validation\nconst pipe = $('Wait: All Pipelines').first().json;\nconst allPlayers = pipe.fcData?.fantasycalc?.allPlayers || pipe.fcData?.fc_values || [];\n\nconst fcMap = {};\nfor (const p of allPlayers) {\n  if (p.player_name) {\n    fcMap[p.player_name.toLowerCase().trim()] = p;\n  }\n}\n\nconst corrected = entries.map(e => {\n  const key = (e.player || '').toLowerCase().trim();\n  const fcPlayer = fcMap[key];\n\n  if (fcPlayer) {\n    e.fc_value = fcPlayer.dynasty_value;\n    e.fc_trend_30d = fcPlayer.trend_30day || 0;\n\n    const val = fcPlayer.dynasty_value || 0;\n    const trend = fcPlayer.trend_30day || 0;\n\n    if (e.action === 'BUY' && val > 6000 && trend > 0) {\n      e.action = 'HOLD';\n      e.action_reasoning = 'Already a premium asset at FC ' + val.toLocaleString() + ' and rising. ' + e.action_reasoning;\n    }\n    if (e.action === 'SELL' && val < 300) {\n      e.action = 'DROP';\n      e.action_reasoning = 'FC value only ' + val + ' \\u2014 minimal trade value. ' + e.action_reasoning;\n    }\n    if (e.event && e.event.toLowerCase().includes('buy-low') && trend > 50) {\n      e.action_reasoning = '\\u26a0\\ufe0f FC trend is actually positive (+' + trend + '), so \"buy-low\" framing may not apply. ' + e.action_reasoning;\n    }\n  } else {\n    if (e.fc_value != null) {\n      e.fc_value = null;\n      e.fc_trend_30d = null;\n    }\n  }\n  return e;\n});\n\nlet nflNews = corrected.map(e => {\n  const fcStr = e.fc_value != null ? ` (FC: ${e.fc_value.toLocaleString()}, \\u0394: ${e.fc_trend_30d > 0 ? '+' : ''}${e.fc_trend_30d || 0})` : ' (Not in FantasyCalc)';\n  return `**${e.player}**${fcStr} \\u2014 ${e.event}\\n\\nImpact: ${e.impact}\\n\\nSecond-order: ${e.second_order}\\n\\nAction: ${e.action} \\u2014 ${e.action_reasoning}`;\n}).join('\\n\\n');\n\nreturn [{ json: {\n  nfl_news: nflNews,\n  news_entries: corrected,\n  raw: newsResult.raw,\n  success: true\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "00489e84-ab76-497a-89a7-4c8642c7a283",
+      "name": "Validate News Output",
+      "position": [
+        1768,
+        -120
+      ],
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Package News Data": {
+      "main": [
+        [
+          {
+            "node": "Execute: News Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Package Market Data": {
+      "main": [
+        [
+          {
+            "node": "Execute: Market Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Package Prospect Data": {
+      "main": [
+        [
+          {
+            "node": "Execute: Prospect Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute: News Agent": {
+      "main": [
+        [
+          {
+            "node": "Validate News Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute: Market Agent": {
+      "main": [
+        [
+          {
+            "node": "Wait: All Agents",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Execute: Prospect Agent": {
+      "main": [
+        [
+          {
+            "node": "Update Prospect Profiles",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wait: All Agents",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Wait: All Agents": {
+      "main": [
+        [
+          {
+            "node": "Assemble Master Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assemble Master Input": {
+      "main": [
+        [
+          {
+            "node": "Execute: Master Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute: Master Agent": {
+      "main": [
+        [
+          {
+            "node": "Format HTML Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format HTML Email": {
+      "main": [
+        [
+          {
+            "node": "Limit 1 Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit 1 Email": {
+      "main": [
+        [
+          {
+            "node": "Gmail Send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Mentions": {
+      "main": [
+        [
+          {
+            "node": "Write Player Mentions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract NFL Transactions": {
+      "main": [
+        [
+          {
+            "node": "Write NFL Transactions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Prospect Profiles": {
+      "main": [
+        [
+          {
+            "node": "Write Prospect Profiles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Execute: RSS Pipeline",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute: Data Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute: RSS Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Wait: All Pipelines",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute: Data Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Wait: All Pipelines",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Wait: All Pipelines": {
+      "main": [
+        [
+          {
+            "node": "Extract Mentions",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract NFL Transactions",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Package News Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Package Market Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Package Prospect Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate News Output": {
+      "main": [
+        [
+          {
+            "node": "Wait: All Agents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "124e8c9a-1030-4667-b2bc-3bb77eb3b8cd",
+  "tags": []
+}

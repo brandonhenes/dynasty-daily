@@ -1,0 +1,1141 @@
+{
+  "name": "Sub - RSS Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "id": "2a08668d-2ae8-4d73-a9de-321899de1056",
+      "name": "When Called By Main",
+      "position": [
+        -600,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.espn.com/espn/rss/nfl/news",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "application/rss+xml, application/xml, text/xml, */*"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 20000
+        }
+      },
+      "id": "f30470b4-823d-4445-9842-aaf6e076d043",
+      "name": "ESPN NFL RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -560,
+        -144
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.cbssports.com/rss/headlines/nfl/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "application/rss+xml, application/xml, text/xml, */*"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 20000
+        }
+      },
+      "id": "b1ed40fc-f268-4817-acbc-229340bad7ec",
+      "name": "CBS Sports NFL RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -560,
+        -48
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://profootballtalk.nbcsports.com/feed/",
+        "options": {}
+      },
+      "id": "3fcd284d-3a68-4084-8383-43cc96ede45a",
+      "name": "ProFootballTalk RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        64
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.pff.com/feed",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "application/rss+xml, application/xml, text/xml, */*"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 20000
+        }
+      },
+      "id": "c359a5c5-e857-420a-b3b3-a352f865be37",
+      "name": "PFF RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -560,
+        144
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.dynastynerds.com/feed/",
+        "options": {}
+      },
+      "id": "8fa77809-df47-4a04-bff7-d19d2b9650ec",
+      "name": "Dynasty Nerds RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        240
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://dynastyleaguefootball.com/feed/",
+        "options": {}
+      },
+      "id": "a6639a02-076d-49ea-953f-9b2e8c6f96cf",
+      "name": "DynastyLeagueFootball RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        336
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://playerprofiler.com/feed/",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "id": "4d7c3c88-bb6b-4f35-9c17-53bef255fbd4",
+      "name": "PlayerProfiler RSS",
+      "position": [
+        -560,
+        512
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.fantasypros.com/feed/",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "id": "74dae51c-7390-4fbb-bb7a-05c03d6c7023",
+      "name": "FantasyPros RSS",
+      "position": [
+        -560,
+        592
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://nfltraderumors.co/feed/",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "id": "5eaeb4f8-7a51-4192-bbe0-2c716db9cf7e",
+      "name": "NFL Trade Rumors RSS",
+      "position": [
+        -560,
+        784
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://overthecap.com/feed",
+        "options": {}
+      },
+      "id": "84389156-9c9b-4b18-82ac-88617ef1266e",
+      "name": "OverTheCap RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        880
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.profootballnetwork.com/category/fantasy-football/feed/",
+        "options": {}
+      },
+      "id": "c79f818d-0eea-4160-8ca8-e20512e7f4b2",
+      "name": "ProFootballNetwork RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        976
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.rotoviz.com/feed/",
+        "options": {}
+      },
+      "id": "dd59406d-f83d-4494-b66b-6b3e1f43050f",
+      "name": "RotoViz RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        1072
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.sharpfootballanalysis.com/feed/",
+        "options": {}
+      },
+      "id": "dc02ee12-c412-4bc4-92ca-0964d3d03635",
+      "name": "SharpFootball RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        1168
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://walterfootball.com/feed",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "id": "c9327563-b8b7-449f-a19c-40843f5d6fae",
+      "name": "Walter Football RSS",
+      "position": [
+        6384,
+        1984
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.reddit.com/r/DynastyFF/hot.json?limit=25",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "dynasty-daily-bot/1.0 (n8n automation)"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {}
+          },
+          "timeout": 15000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "id": "33299d23-bcfb-4c8a-97c8-b0004440fdc8",
+      "name": "Reddit DynastyFF",
+      "position": [
+        6384,
+        2080
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse raw XML RSS response into structured articles\nconst rawItems = $input.all();\nconst articles = [];\n\nfor (const item of rawItems) {\n  let text = '';\n  // HTTP Request with text response format\n  if (typeof item.json.data === 'string') text = item.json.data;\n  else if (typeof item.json === 'string') text = item.json;\n  else if (item.json.body) text = item.json.body;\n  else text = JSON.stringify(item.json);\n  \n  // Simple XML regex parsing for RSS items\n  const itemRegex = /<item[^>]*>([\\s\\S]*?)<\\/item>/gi;\n  let match;\n  while ((match = itemRegex.exec(text)) !== null) {\n    const block = match[1];\n    const get = (tag) => {\n      const m = block.match(new RegExp('<' + tag + '[^>]*><!\\\\[CDATA\\\\[([\\\\s\\\\S]*?)\\\\]\\\\]><\\\\/' + tag + '>', 'i'))\n        || block.match(new RegExp('<' + tag + '[^>]*>([\\\\s\\\\S]*?)<\\\\/' + tag + '>', 'i'));\n      return m ? m[1].trim() : '';\n    };\n    const title = get('title');\n    if (!title) continue;\n    let link = get('link');\n    if (!link) {\n      const lm = block.match(/<link[^>]*href=[\"']([^\"']+)/i);\n      if (lm) link = lm[1];\n    }\n    articles.push({\n      title,\n      link,\n      description: get('description') || get('content:encoded') || '',\n      pubDate: get('pubDate') || get('published') || '',\n      source: 'ESPN',\n      creator: get('dc:creator') || get('author') || ''\n    });\n  }\n  \n  // Also try Atom format\n  if (articles.length === 0) {\n    const entryRegex = /<entry[^>]*>([\\s\\S]*?)<\\/entry>/gi;\n    while ((match = entryRegex.exec(text)) !== null) {\n      const block = match[1];\n      const get = (tag) => {\n        const m = block.match(new RegExp('<' + tag + '[^>]*><!\\\\[CDATA\\\\[([\\\\s\\\\S]*?)\\\\]\\\\]><\\\\/' + tag + '>', 'i'))\n          || block.match(new RegExp('<' + tag + '[^>]*>([\\\\s\\\\S]*?)<\\\\/' + tag + '>', 'i'));\n        return m ? m[1].trim() : '';\n      };\n      const title = get('title');\n      if (!title) continue;\n      let link = '';\n      const lm = block.match(/<link[^>]*href=[\"']([^\"']+)/i);\n      if (lm) link = lm[1];\n      articles.push({\n        title,\n        link,\n        description: get('summary') || get('content') || '',\n        pubDate: get('published') || get('updated') || '',\n        source: 'ESPN',\n        creator: get('author') || ''\n      });\n    }\n  }\n}\n\nreturn [{ json: { articles, count: articles.length, source: 'ESPN' } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "521840a9-cb73-4c3f-94fa-08b267a82b4b",
+      "name": "Pack: ESPN",
+      "position": [
+        -320,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse raw XML RSS response into structured articles\nconst rawItems = $input.all();\nconst articles = [];\n\nfor (const item of rawItems) {\n  let text = '';\n  // HTTP Request with text response format\n  if (typeof item.json.data === 'string') text = item.json.data;\n  else if (typeof item.json === 'string') text = item.json;\n  else if (item.json.body) text = item.json.body;\n  else text = JSON.stringify(item.json);\n  \n  // Simple XML regex parsing for RSS items\n  const itemRegex = /<item[^>]*>([\\s\\S]*?)<\\/item>/gi;\n  let match;\n  while ((match = itemRegex.exec(text)) !== null) {\n    const block = match[1];\n    const get = (tag) => {\n      const m = block.match(new RegExp('<' + tag + '[^>]*><!\\\\[CDATA\\\\[([\\\\s\\\\S]*?)\\\\]\\\\]><\\\\/' + tag + '>', 'i'))\n        || block.match(new RegExp('<' + tag + '[^>]*>([\\\\s\\\\S]*?)<\\\\/' + tag + '>', 'i'));\n      return m ? m[1].trim() : '';\n    };\n    const title = get('title');\n    if (!title) continue;\n    let link = get('link');\n    if (!link) {\n      const lm = block.match(/<link[^>]*href=[\"']([^\"']+)/i);\n      if (lm) link = lm[1];\n    }\n    articles.push({\n      title,\n      link,\n      description: get('description') || get('content:encoded') || '',\n      pubDate: get('pubDate') || get('published') || '',\n      source: 'CBS Sports',\n      creator: get('dc:creator') || get('author') || ''\n    });\n  }\n  \n  // Also try Atom format\n  if (articles.length === 0) {\n    const entryRegex = /<entry[^>]*>([\\s\\S]*?)<\\/entry>/gi;\n    while ((match = entryRegex.exec(text)) !== null) {\n      const block = match[1];\n      const get = (tag) => {\n        const m = block.match(new RegExp('<' + tag + '[^>]*><!\\\\[CDATA\\\\[([\\\\s\\\\S]*?)\\\\]\\\\]><\\\\/' + tag + '>', 'i'))\n          || block.match(new RegExp('<' + tag + '[^>]*>([\\\\s\\\\S]*?)<\\\\/' + tag + '>', 'i'));\n        return m ? m[1].trim() : '';\n      };\n      const title = get('title');\n      if (!title) continue;\n      let link = '';\n      const lm = block.match(/<link[^>]*href=[\"']([^\"']+)/i);\n      if (lm) link = lm[1];\n      articles.push({\n        title,\n        link,\n        description: get('summary') || get('content') || '',\n        pubDate: get('published') || get('updated') || '',\n        source: 'CBS Sports',\n        creator: get('author') || ''\n      });\n    }\n  }\n}\n\nreturn [{ json: { articles, count: articles.length, source: 'CBS Sports' } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "84b3d4e7-6bdd-4531-8692-e1971b2726c1",
+      "name": "Pack: CBS",
+      "position": [
+        -320,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pack RSS Feed Read items into single item\nconst allItems = $input.all().map(item => ({\n  title: item.json.title || '',\n  link: item.json.link || item.json.guid || '',\n  description: item.json.content || item.json.contentSnippet || '',\n  pubDate: item.json.isoDate || item.json.pubDate || '',\n  source: 'ProFootballTalk',\n  creator: item.json.creator || ''\n}));\nreturn [{ json: { articles: allItems, count: allItems.length, source: 'ProFootballTalk' } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "26b0115c-4226-4ac3-9203-ae111a3e9986",
+      "name": "Pack: PFT",
+      "position": [
+        -320,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse raw XML RSS response into structured articles\nconst rawItems = $input.all();\nconst articles = [];\n\nfor (const item of rawItems) {\n  let text = '';\n  // HTTP Request with text response format\n  if (typeof item.json.data === 'string') text = item.json.data;\n  else if (typeof item.json === 'string') text = item.json;\n  else if (item.json.body) text = item.json.body;\n  else text = JSON.stringify(item.json);\n  \n  // Simple XML regex parsing for RSS items\n  const itemRegex = /<item[^>]*>([\\s\\S]*?)<\\/item>/gi;\n  let match;\n  while ((match = itemRegex.exec(text)) !== null) {\n    const block = match[1];\n    const get = (tag) => {\n      const m = block.match(new RegExp('<' + tag + '[^>]*><!\\\\[CDATA\\\\[([\\\\s\\\\S]*?)\\\\]\\\\]><\\\\/' + tag + '>', 'i'))\n        || block.match(new RegExp('<' + tag + '[^>]*>([\\\\s\\\\S]*?)<\\\\/' + tag + '>', 'i'));\n      return m ? m[1].trim() : '';\n    };\n    const title = get('title');\n    if (!title) continue;\n    let link = get('link');\n    if (!link) {\n      const lm = block.match(/<link[^>]*href=[\"']([^\"']+)/i);\n      if (lm) link = lm[1];\n    }\n    articles.push({\n      title,\n      link,\n      description: get('description') || get('content:encoded') || '',\n      pubDate: get('pubDate') || get('published') || '',\n      source: 'PFF',\n      creator: get('dc:creator') || get('author') || ''\n    });\n  }\n  \n  // Also try Atom format\n  if (articles.length === 0) {\n    const entryRegex = /<entry[^>]*>([\\s\\S]*?)<\\/entry>/gi;\n    while ((match = entryRegex.exec(text)) !== null) {\n      const block = match[1];\n      const get = (tag) => {\n        const m = block.match(new RegExp('<' + tag + '[^>]*><!\\\\[CDATA\\\\[([\\\\s\\\\S]*?)\\\\]\\\\]><\\\\/' + tag + '>', 'i'))\n          || block.match(new RegExp('<' + tag + '[^>]*>([\\\\s\\\\S]*?)<\\\\/' + tag + '>', 'i'));\n        return m ? m[1].trim() : '';\n      };\n      const title = get('title');\n      if (!title) continue;\n      let link = '';\n      const lm = block.match(/<link[^>]*href=[\"']([^\"']+)/i);\n      if (lm) link = lm[1];\n      articles.push({\n        title,\n        link,\n        description: get('summary') || get('content') || '',\n        pubDate: get('published') || get('updated') || '',\n        source: 'PFF',\n        creator: get('author') || ''\n      });\n    }\n  }\n}\n\nreturn [{ json: { articles, count: articles.length, source: 'PFF' } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "234a2b59-4540-4d37-9a3b-9143c3a5f191",
+      "name": "Pack: PFF",
+      "position": [
+        -320,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pack RSS Feed Read items into single item\nconst allItems = $input.all().map(item => ({\n  title: item.json.title || '',\n  link: item.json.link || item.json.guid || '',\n  description: item.json.content || item.json.contentSnippet || '',\n  pubDate: item.json.isoDate || item.json.pubDate || '',\n  source: 'Dynasty Nerds',\n  creator: item.json.creator || ''\n}));\nreturn [{ json: { articles: allItems, count: allItems.length, source: 'Dynasty Nerds' } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "6616f58b-a815-4dd5-8db4-e0c1c767b79c",
+      "name": "Pack: DN",
+      "position": [
+        -320,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pack RSS Feed Read items into single item\nconst allItems = $input.all().map(item => ({\n  title: item.json.title || '',\n  link: item.json.link || item.json.guid || '',\n  description: item.json.content || item.json.contentSnippet || '',\n  pubDate: item.json.isoDate || item.json.pubDate || '',\n  source: 'DynastyLeagueFootball',\n  creator: item.json.creator || ''\n}));\nreturn [{ json: { articles: allItems, count: allItems.length, source: 'DynastyLeagueFootball' } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "070ec506-b6fd-4d84-bc49-68c4fbe4675e",
+      "name": "Pack: DLF",
+      "position": [
+        -320,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pack RSS Feed Read items into single item\nconst allItems = $input.all().map(item => ({\n  title: item.json.title || '',\n  link: item.json.link || item.json.guid || '',\n  description: item.json.content || item.json.contentSnippet || '',\n  pubDate: item.json.isoDate || item.json.pubDate || '',\n  source: 'PlayerProfiler',\n  creator: item.json.creator || ''\n}));\nreturn [{ json: { articles: allItems, count: allItems.length, source: 'PlayerProfiler' } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "8d5a387a-9637-4687-bdca-013c51bc50d1",
+      "name": "Pack: PP",
+      "position": [
+        -320,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pack RSS Feed Read items into single item\nconst allItems = $input.all().map(item => ({\n  title: item.json.title || '',\n  link: item.json.link || item.json.guid || '',\n  description: item.json.content || item.json.contentSnippet || '',\n  pubDate: item.json.isoDate || item.json.pubDate || '',\n  source: 'FantasyPros',\n  creator: item.json.creator || ''\n}));\nreturn [{ json: { articles: allItems, count: allItems.length, source: 'FantasyPros' } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "c8dd098b-7caf-4022-9476-b999dcc958b5",
+      "name": "Pack: FP",
+      "position": [
+        -320,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pack RSS Feed Read items into single item\nconst allItems = $input.all().map(item => ({\n  title: item.json.title || '',\n  link: item.json.link || item.json.guid || '',\n  description: item.json.content || item.json.contentSnippet || '',\n  pubDate: item.json.isoDate || item.json.pubDate || '',\n  source: 'NFL Trade Rumors',\n  creator: item.json.creator || ''\n}));\nreturn [{ json: { articles: allItems, count: allItems.length, source: 'NFL Trade Rumors' } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "1d65ae22-ad1a-4681-a2d5-65c4544da789",
+      "name": "Pack: NFLTR",
+      "position": [
+        -320,
+        784
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pack RSS Feed Read items into single item\nconst allItems = $input.all().map(item => ({\n  title: item.json.title || '',\n  link: item.json.link || item.json.guid || '',\n  description: item.json.content || item.json.contentSnippet || '',\n  pubDate: item.json.isoDate || item.json.pubDate || '',\n  source: 'Over The Cap',\n  creator: item.json.creator || ''\n}));\nreturn [{ json: { articles: allItems, count: allItems.length, source: 'Over The Cap' } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "d8d35a64-c3b3-49e1-bbb0-b99fddfb8c2b",
+      "name": "Pack: OTC",
+      "position": [
+        -320,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pack RSS Feed Read items into single item\nconst allItems = $input.all().map(item => ({\n  title: item.json.title || '',\n  link: item.json.link || item.json.guid || '',\n  description: item.json.content || item.json.contentSnippet || '',\n  pubDate: item.json.isoDate || item.json.pubDate || '',\n  source: 'Pro Football Network',\n  creator: item.json.creator || ''\n}));\nreturn [{ json: { articles: allItems, count: allItems.length, source: 'Pro Football Network' } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "5e99286a-adc3-4f9e-aeb4-08f9fe624666",
+      "name": "Pack: PFN",
+      "position": [
+        -320,
+        976
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pack RSS Feed Read items into single item\nconst allItems = $input.all().map(item => ({\n  title: item.json.title || '',\n  link: item.json.link || item.json.guid || '',\n  description: item.json.content || item.json.contentSnippet || '',\n  pubDate: item.json.isoDate || item.json.pubDate || '',\n  source: 'RotoViz',\n  creator: item.json.creator || ''\n}));\nreturn [{ json: { articles: allItems, count: allItems.length, source: 'RotoViz' } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "2b6235c1-4d44-4828-a8c3-5e7b3e50cbb8",
+      "name": "Pack: RV",
+      "position": [
+        -320,
+        1072
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pack RSS Feed Read items into single item\nconst allItems = $input.all().map(item => ({\n  title: item.json.title || '',\n  link: item.json.link || item.json.guid || '',\n  description: item.json.content || item.json.contentSnippet || '',\n  pubDate: item.json.isoDate || item.json.pubDate || '',\n  source: 'Sharp Football',\n  creator: item.json.creator || ''\n}));\nreturn [{ json: { articles: allItems, count: allItems.length, source: 'Sharp Football' } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "7c0afbfa-c07b-42c2-9a6c-99bf14314c0c",
+      "name": "Pack: SFA",
+      "position": [
+        -320,
+        1168
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => ({ json: { title: item.json.title || '', link: item.json.link || '', description: (item.json.description || item.json.content || '').substring(0, 500), pubDate: item.json.pubDate || item.json.isoDate || '', source: 'Walter Football' } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "f1d3defd-3208-426f-87ee-db4ee3f7dd20",
+      "name": "Pack: WF",
+      "position": [
+        6576,
+        1984
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json;\nconst posts = (body.data && body.data.children) || [];\nreturn posts\n  .filter(p => p.data && p.data.score >= 10)\n  .slice(0, 15)\n  .map(p => ({\n    json: {\n      title: p.data.title || '',\n      link: 'https://www.reddit.com' + (p.data.permalink || ''),\n      description: (p.data.selftext || '').substring(0, 500),\n      pubDate: p.data.created_utc ? new Date(p.data.created_utc * 1000).toISOString() : '',\n      source: 'Reddit r/DynastyFF',\n      score: p.data.score || 0,\n      flair: p.data.link_flair_text || ''\n    }\n  }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "961a7005-ce28-4358-96ab-eaa4fa9c302f",
+      "name": "Pack: Reddit",
+      "position": [
+        6576,
+        2080
+      ]
+    },
+    {
+      "parameters": {
+        "numberInputs": 15
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "id": "6bd1d7e7-f2bd-45ab-9e8b-0e04f1464843",
+      "name": "Wait: RSS Feeds",
+      "position": [
+        -80,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ═══════════════════════════════════════════════════════\n// DYNASTY DAILY v3 — ARTICLE RELEVANCE SCORING ENGINE\n// 5 dimensions + story dedup. No external data dependencies.\n// ═══════════════════════════════════════════════════════\n\n// ── COLLECT ARTICLES FROM ALL PACK NODES ──\nconst feeds = [\n  'Pack: ESPN', 'Pack: CBS', 'Pack: PFT',\n  'Pack: PFF', 'Pack: DN', 'Pack: DLF',\n  'Pack: PP', 'Pack: FP', 'Pack: NFLTR',\n  'Pack: OTC', 'Pack: PFN', 'Pack: RV', 'Pack: SFA',\n  'Pack: WF', 'Pack: Reddit'\n];\n\nconst allArticles = [];\nfor (const feedName of feeds) {\n  try {\n    const packItems = $(feedName).all();\n    for (const packItem of packItems) {\n      const packed = packItem.json;\n      // Handle both formats: packed.articles array or single article\n      const arts = packed.articles || [packItem.json];\n      for (const a of arts) {\n        if (a.title && a.title.length > 5) {\n          allArticles.push({ ...a, _source: feedName });\n        }\n      }\n    }\n  } catch (e) {}\n}\n\n// ── HARD EXCLUSIONS ──\nconst exclusionPattern = /fantasy baseball|mlb|nba|nhl|soccer|premier league|ufc|mma|boxing|dfs|daily fantasy|draftkings lineup|fanduel lineup|nascar|epl|pga|golf tournament|cricket|tennis|best bets|betting odds|odds boost|prop bet|against the spread|\\bATS\\b/i;\nconst filtered = allArticles.filter(a => {\n  const text = (a.title || '') + ' ' + (a.description || '');\n  return !exclusionPattern.test(text);\n});\n\n// ═══════════════════════════════════════════════════════\n// SCORING CONFIGURATION\n// ═══════════════════════════════════════════════════════\n\n// Source quality tiers\nconst sourceScores = {\n  'dynasty nerds': 5, 'dynastyleaguefootball': 5, 'dlf': 5,\n  'playerprofiler': 5, 'pff': 5,\n  'rotoviz': 4, 'sharp football': 4,\n  'espn': 3, 'cbs sports': 3, 'profootballtalk': 3,\n  'nfl trade rumors': 3, 'over the cap': 3,\n  'pro football network': 3, 'fantasypros': 3, 'walter football': 3,\n  'reddit': 2, 'rotowire': 2\n};\n\nfunction getSourceScore(source) {\n  const s = (source || '').toLowerCase();\n  for (const [key, val] of Object.entries(sourceScores)) {\n    if (s.includes(key)) return val;\n  }\n  return 1;\n}\n\n// IDP detection — spelled-out positions and 2+ letter abbreviations only.\n// Single letters (S, C, P, K) cause massive false positives, so excluded.\nconst idpPattern = /\\b(linebacker|linebackers|defensive end|cornerback|safety|safeties|defensive tackle|edge rusher|pass rusher|defensive back|defensive lineman|\\bLB\\b|\\bDL\\b|\\bDE\\b|\\bDT\\b|\\bCB\\b|\\bDB\\b|\\bIDP\\b|\\bEDGE\\b)\\b/i;\nconst kickerOLPattern = /\\b(kicker|punter|long snapper|offensive line|offensive lineman|\\bOL\\b|\\bOG\\b|\\bOT\\b)\\b/i;\n\n// Star IDP exceptions — newsworthy even in non-IDP context\nconst starIDP = /\\b(micah parsons|myles garrett|tj watt|t\\.?j\\.? watt|nick bosa|maxx crosby|sauce gardner|trevon diggs|derwin james|jalen ramsey)\\b/i;\n\n// Prospect / dynasty content detection\nconst prospectPattern = /\\b(prospect|rookie|scouting report|film breakdown|rookie profile|draft profile|combine|pro day|senior bowl|devy|2026 class|2027 class|college football|draft stock|mock draft|big board|rookie rank|landing spot|declare|return to school|draft capital|rookie mock)\\b/i;\nconst dynastyStrategy = /\\b(dynasty|buy low|sell high|buy.sell.hold|trade target|trade value|startup|superflex|TEP|keeper league|dynasty rank|dynasty trade|hold or sell|roster construction)\\b/i;\n\n// Junk content patterns\nconst junkPattern = /\\b(podcast|EP\\.?\\s*\\d+|episode\\s*\\d+|youtube|watch now|listen now|subscribe|power rankings|picks?\\s+for\\s+week|bold predictions|hot takes)\\b/i;\n\n// ═══════════════════════════════════════════════════════\n// SCORE EVERY ARTICLE — 5 DIMENSIONS\n// ═══════════════════════════════════════════════════════\n\nconst scored = filtered.map(a => {\n  const title = (a.title || '');\n  const desc = (a.description || '');\n  const text = title + ' ' + desc;\n  let score = 0;\n  const breakdown = {};\n\n  // ── D1: EVENT IMPORTANCE (0-12) ──\n  // What real-world event does this cover?\n  let d1 = 0;\n  if (/\\b(died|death|dead|passed away|killed|found dead|fatal|suicide)\\b/i.test(text)) {\n    d1 = 12;\n  } else if (/\\b(acl|mcl|achilles|surgery|torn|season.ending|out for (?:the )?season|career.?ending|placed on IR)\\b/i.test(text)) {\n    d1 = 10;\n  } else if (/\\b(traded to|traded from|deal sends|in exchange for|blockbuster trade)\\b/i.test(text)) {\n    d1 = 10;\n  } else if (/\\b(released|waived|cut by|off the roster|designated.*post.june|cap casualty)\\b/i.test(text)) {\n    d1 = 8;\n  } else if (/\\b(signs? with|agreed? to|free agenc|franchise tag|tag(?:ged|ging))\\b/i.test(text)) {\n    d1 = 8;\n  } else if (/\\b(retire[sd]?|retirement|unretire|contemplat|coming back)\\b/i.test(text)) {\n    d1 = 7;\n  } else if (/\\b(suspend|holdout|contract dispute|wants out|trade request)\\b/i.test(text)) {\n    d1 = 6;\n  } else if (/\\b(re.?sign|practice squad|roster bonus|erfa|rfa|exclusive rights)\\b/i.test(text)) {\n    d1 = 2;\n  }\n  breakdown.event = d1;\n  score += d1;\n\n  // ── D2: POSITION RELEVANCE (-5 to +5) ──\n  // SF/TEP leagues: offensive skill = relevant, IDP = penalty\n  const isProspect = prospectPattern.test(text);\n  const isIDP = idpPattern.test(text);\n  const isStarIDP = starIDP.test(text);\n  const isKOL = kickerOLPattern.test(text);\n  let d2 = 0;\n  if (isProspect) {\n    d2 = 5;\n  } else if (isIDP && isStarIDP) {\n    d2 = 2;  // Parsons-level: acknowledge but don't prioritize\n  } else if (isIDP) {\n    d2 = -5; // Generic IDP: actively suppress\n  } else if (isKOL) {\n    d2 = 0;  // Kicker/OL: irrelevant\n  } else {\n    d2 = 5;  // Offensive skill / general NFL: full relevance\n  }\n  breakdown.position = d2;\n  score += d2;\n\n  // ── D3: CONTENT TYPE (0-10) ──\n  // What kind of content is this? Scouting > strategy > news > fluff\n  let d3 = 0;\n  if (junkPattern.test(text)) {\n    d3 = 0;\n  } else if (/\\b(scouting report|film breakdown|rookie profile|draft profile|prospect breakdown|film room|all.?22|tape study|game film)\\b/i.test(text)) {\n    d3 = 10;\n  } else if (/\\b((?:2|3|4|7).round mock|mock draft.*(?:round|analysis|breakdown|with trades))\\b/i.test(text)) {\n    d3 = 8;\n  } else if (dynastyStrategy.test(text)) {\n    d3 = 7;\n  } else if (/\\b(trade (?:offer|analysis|scenario|value|package|market)|cap (?:implication|space|hit|saving|breakdown))\\b/i.test(text)) {\n    d3 = 6;\n  } else if (/\\b(mock draft)\\b/i.test(text)) {\n    d3 = 4;\n  } else if (/\\b(rank|top \\d+|tier)\\b/i.test(text) && desc.length > 200) {\n    d3 = 4; // Rankings WITH body text — has substance\n  } else if (/\\b(rank|top \\d+|tier)\\b/i.test(text)) {\n    d3 = 0; // Rankings headline only — no content to extract\n  } else if (d1 >= 6) {\n    d3 = 3; // Transaction news — value is in the event itself\n  } else {\n    d3 = 1; // Generic article\n  }\n  breakdown.content = d3;\n  score += d3;\n\n  // ── D4: SOURCE QUALITY (0-5) ──\n  const d4 = getSourceScore(a.source);\n  breakdown.source = d4;\n  score += d4;\n\n  // ── D5: FRESHNESS (0-4) ──\n  let d5 = 1; // default if date parsing fails\n  try {\n    const hoursAgo = (Date.now() - new Date(a.pubDate).getTime()) / 3600000;\n    if (hoursAgo < 4) d5 = 4;\n    else if (hoursAgo < 8) d5 = 3;\n    else if (hoursAgo < 16) d5 = 2;\n    else if (hoursAgo < 24) d5 = 1;\n    else d5 = 0;\n  } catch(e) {}\n  breakdown.fresh = d5;\n  score += d5;\n\n  return { ...a, score, scoreBreakdown: breakdown, isProspect };\n});\n\n// ═══════════════════════════════════════════════════════\n// DEDUPLICATION — TITLE SIMILARITY CLUSTERING\n// No external data needed. Uses word overlap on titles.\n// ═══════════════════════════════════════════════════════\n\n// Stop words to ignore when comparing titles\nconst stopWords = new Set([\n  'a','an','the','in','on','at','to','for','of','and','or','is','are',\n  'was','were','be','been','has','have','had','do','does','did','will',\n  'would','could','should','may','might','can','shall','not','no','but',\n  'if','than','that','this','these','those','with','from','by','as',\n  'it','its','he','she','they','his','her','their','our','we','you',\n  'who','what','when','where','why','how','all','each','every','both',\n  'few','more','most','other','some','such','just','also','very','often',\n  'about','after','before','between','into','through','during','up','out',\n  'new','nfl','football','fantasy','report','news','update','via','says',\n  'per','sources','according'\n]);\n\n// Event category for clustering\nfunction getEventCategory(text) {\n  const t = text.toLowerCase();\n  if (/\\b(died|death|dead|passed|fatal|suicide)\\b/.test(t)) return 'death';\n  if (/\\b(traded|trade[sd]?|deal sends|in exchange)\\b/.test(t)) return 'trade';\n  if (/\\b(injur|surgery|acl|mcl|torn|achilles|out for)\\b/.test(t)) return 'injury';\n  if (/\\b(sign|free agent|agrees|franchise tag)\\b/.test(t)) return 'signing';\n  if (/\\b(release|waive[sd]?|cut by|cap casualty)\\b/.test(t)) return 'release';\n  if (/\\b(retire|retirement|coming back|unretire)\\b/.test(t)) return 'retire';\n  if (/\\b(suspend|holdout|wants out)\\b/.test(t)) return 'discipline';\n  if (/\\b(scouting|prospect|film|profile)\\b/.test(t)) return 'scouting';\n  if (/\\b(mock draft)\\b/.test(t)) return 'mock';\n  if (/\\b(rank|tier|top \\d+)\\b/.test(t)) return 'rankings';\n  return 'other';\n}\n\n// Extract meaningful title words (potential names + key nouns)\nfunction titleWords(title) {\n  return (title || '').toLowerCase()\n    .replace(/[^a-z0-9\\s]/g, '')\n    .split(/\\s+/)\n    .filter(w => w.length >= 3 && !stopWords.has(w));\n}\n\n// Jaccard similarity: |A ∩ B| / |A ∪ B|\nfunction jaccard(wordsA, wordsB) {\n  const setA = new Set(wordsA);\n  const setB = new Set(wordsB);\n  let intersection = 0;\n  for (const w of setA) { if (setB.has(w)) intersection++; }\n  const union = new Set([...setA, ...setB]).size;\n  return union === 0 ? 0 : intersection / union;\n}\n\n// Build clusters using title similarity + event category\n// Two articles cluster if:\n//   1. Same event category (both about a trade, both about an injury, etc.)\n//   2. Title word overlap >= 0.35 (share at least ~35% of meaningful words)\nconst clusters = [];\nconst assigned = new Array(scored.length).fill(-1);\n\nfor (let i = 0; i < scored.length; i++) {\n  if (assigned[i] >= 0) continue;\n\n  const a = scored[i];\n  const aWords = titleWords(a.title);\n  const aEvent = getEventCategory(a.title);\n  const cluster = [i];\n  assigned[i] = clusters.length;\n\n  for (let j = i + 1; j < scored.length; j++) {\n    if (assigned[j] >= 0) continue;\n    const b = scored[j];\n    const bEvent = getEventCategory(b.title);\n\n    // Must be same event type to cluster\n    if (aEvent !== bEvent) continue;\n    // 'other' / 'rankings' / 'mock' categories are too broad — don't cluster them\n    if (['other', 'rankings', 'mock'].includes(aEvent)) continue;\n\n    const bWords = titleWords(b.title);\n    const sim = jaccard(aWords, bWords);\n    if (sim >= 0.35) {\n      cluster.push(j);\n      assigned[j] = clusters.length;\n    }\n  }\n  clusters.push(cluster);\n}\n\n// Within each cluster: highest score wins. Rest are killed.\nconst finalArticles = [];\nfor (const cluster of clusters) {\n  // Sort cluster members by score descending\n  cluster.sort((a, b) => scored[b].score - scored[a].score);\n  // Winner keeps full score\n  finalArticles.push(scored[cluster[0]]);\n  // Losers are discarded entirely — winner takes all\n}\n\n// ═══════════════════════════════════════════════════════\n// OUTPUT: Sort by score, take top 25 for downstream selection\n// ═══════════════════════════════════════════════════════\n\nfinalArticles.sort((a, b) => b.score - a.score);\nconst top = finalArticles.slice(0, 25);\n\nreturn [{ json: {\n  articles: top,\n  article_count: top.length,\n  total_found: allArticles.length,\n  total_after_exclusion: filtered.length,\n  clusters_formed: clusters.filter(c => c.length > 1).length,\n  articles_deduped: scored.length - finalArticles.length\n} }];"
+      },
+      "id": "326b944d-4690-4e99-82ba-d224ae1815a4",
+      "name": "Filter & Condense RSS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ═══════════════════════════════════════════════════════\n// SELECT TOP ARTICLES — 18 total with prospect guarantee\n// Input: Scored articles from Filter & Condense RSS\n// Output: Individual articles for Jina Reader enrichment\n// ═══════════════════════════════════════════════════════\n\nconst allArticles = $input.first().json.articles || [];\nconst withLinks = allArticles.filter(a => a.link && a.link.startsWith('http'));\n\n// Prospect detection (using same keywords as Task 20 scoring)\nconst prospectKW = /\\b(prospect|rookie|draft|combine|scouting|devy|mock draft|pro day|2026 class|2027 class|rookie profile|rookie rank|landing spot|big board|scouting report|film breakdown|draft profile|senior bowl|draft stock)\\b/i;\n\n// Split into prospect vs non-prospect\nconst prospectArticles = [];\nconst otherArticles = [];\nfor (const a of withLinks) {\n  const text = (a.title || '') + ' ' + (a.description || '');\n  // Use the isProspect flag from scoring if available, else detect\n  if (a.isProspect || prospectKW.test(text)) {\n    prospectArticles.push(a);\n  } else {\n    otherArticles.push(a);\n  }\n}\n\n// Both pools are already sorted by score (Task 20 sorted before output)\n// Take up to 14 non-prospect articles\nconst mainSlots = otherArticles.slice(0, 14);\n\n// Reserve up to 4 slots for prospect articles not already in main\nconst mainLinks = new Set(mainSlots.map(a => a.link));\nconst prospectSlots = prospectArticles\n  .filter(a => !mainLinks.has(a.link))\n  .slice(0, 4);\n\n// Combine: main first, then prospect reserves\nconst selected = [...mainSlots, ...prospectSlots].slice(0, 18);\n\nreturn selected.map(a => ({ json: {\n  title: a.title,\n  link: a.link,\n  source: a.source,\n  score: a.score || 0,\n  scoreBreakdown: a.scoreBreakdown || {},\n  isProspect: a.isProspect || false,\n  tier: a.tier || 3,\n  description: a.description || '',\n  pubDate: a.pubDate || '',\n  original_text: (a.description || '').substring(0, 500)\n}}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "0d591aa6-785c-49f2-8a62-8dc3a73fecf5",
+      "name": "Select Top 12 Articles",
+      "position": [
+        400,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://r.jina.ai/{{ $json.link }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "text/plain"
+            },
+            {
+              "name": "X-Return-Format",
+              "value": "text"
+            },
+            {
+              "name": "X-With-Generated-Alt",
+              "value": "false"
+            },
+            {
+              "name": "X-No-Cache",
+              "value": "true"
+            },
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer jina_e43a3e7bb1904fe5a1a23307d4a1aa06A74B2UI662ub9svWJyrcT1wbS27A"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 2,
+              "batchInterval": 1500
+            }
+          },
+          "redirect": {
+            "redirect": {
+              "maxRedirects": 3
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "id": "d6fab9c3-23d7-4574-9bb9-06be5f544fda",
+      "name": "Jina Reader",
+      "position": [
+        640,
+        336
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const jinaResults = $input.all();\nconst originals = $('Select Top 12 Articles').all();\n\nconst articles = jinaResults.map((item, idx) => {\n  const j = item.json;\n  const orig = idx < originals.length ? originals[idx].json : {};\n  \n  let fullText = '';\n  if (typeof j.data === 'string') fullText = j.data;\n  else if (j.content) fullText = j.content;\n  else if (j.text) fullText = j.text;\n  else { const keys = Object.keys(j); if (keys.length === 1 && typeof j[keys[0]] === 'string') fullText = j[keys[0]]; }\n  if (!fullText || fullText.length < 50) fullText = orig.original_text || '';\n  \n  fullText = fullText.replace(/\\[.*?\\]/g, '').replace(/!\\[.*?\\]/g, '')\n    .replace(/#{1,6}\\s/g, '').replace(/\\*{1,2}([^*]+)\\*{1,2}/g, '$1')\n    .replace(/\\n{3,}/g, '\\n\\n').trim();\n  if (fullText.length > 3500) fullText = fullText.substring(0, 3500) + '...';\n  \n  return {\n    title: orig.title || '', source: orig.source || '',\n    link: orig.link || '', tier: orig.tier || 3,\n    pubDate: orig.pubDate || '', extracted_text: fullText,\n    description: orig.description || '',\n    has_full_text: fullText.length > 200\n  };\n});\n\nreturn [{ json: { articles, enriched: articles.filter(a => a.has_full_text).length } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "67b3bfdb-58be-4802-9353-22487a19f883",
+      "name": "Pack Full Text",
+      "position": [
+        880,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const articles = $input.first().json.articles || [];\nconst prospectKW = /\\b(prospect|rookie|draft|combine|scouting|devy|mock draft|pro day|2026 class|2027 class|college|ncaa|nfl draft)\\b/i;\n\nconst prospectArticles = articles.filter(a => \n  prospectKW.test((a.title||'') + ' ' + (a.description||'') + ' ' + (a.extracted_text||'').substring(0, 500))\n);\n\nreturn [{ json: {\n  allArticles: articles,\n  prospectArticles,\n  articleCount: articles.length,\n  prospectCount: prospectArticles.length\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "407ebbde-6274-405c-98da-198b34d4aaab",
+      "name": "Split Articles",
+      "position": [
+        1120,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect all data from upstream nodes and return to Main\nconst splitData = $input.first().json;\nconst fullTextData = $('Pack Full Text').first().json;\n\nreturn [{ json: {\n  newsArticles: splitData.newsArticles || [],\n  prospectArticles: splitData.prospectArticles || [],\n  allArticles: splitData.allArticles || [],\n  sources: splitData.sources || fullTextData.sources || [],\n  fullTextArticles: fullTextData.articles || [],\n  articleCount: (splitData.allArticles || []).length,\n  fullTextCount: (fullTextData.articles || []).length\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "c910e59b-be12-4e3e-a330-e851050a67af",
+      "name": "Return RSS Data",
+      "position": [
+        1400,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "ESPN NFL RSS": {
+      "main": [
+        [
+          {
+            "node": "Pack: ESPN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CBS Sports NFL RSS": {
+      "main": [
+        [
+          {
+            "node": "Pack: CBS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ProFootballTalk RSS": {
+      "main": [
+        [
+          {
+            "node": "Pack: PFT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PFF RSS": {
+      "main": [
+        [
+          {
+            "node": "Pack: PFF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dynasty Nerds RSS": {
+      "main": [
+        [
+          {
+            "node": "Pack: DN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DynastyLeagueFootball RSS": {
+      "main": [
+        [
+          {
+            "node": "Pack: DLF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PlayerProfiler RSS": {
+      "main": [
+        [
+          {
+            "node": "Pack: PP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FantasyPros RSS": {
+      "main": [
+        [
+          {
+            "node": "Pack: FP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NFL Trade Rumors RSS": {
+      "main": [
+        [
+          {
+            "node": "Pack: NFLTR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pack: ESPN": {
+      "main": [
+        [
+          {
+            "node": "Wait: RSS Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pack: CBS": {
+      "main": [
+        [
+          {
+            "node": "Wait: RSS Feeds",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Pack: PFT": {
+      "main": [
+        [
+          {
+            "node": "Wait: RSS Feeds",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Pack: PFF": {
+      "main": [
+        [
+          {
+            "node": "Wait: RSS Feeds",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Pack: DN": {
+      "main": [
+        [
+          {
+            "node": "Wait: RSS Feeds",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Pack: DLF": {
+      "main": [
+        [
+          {
+            "node": "Wait: RSS Feeds",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "Pack: PP": {
+      "main": [
+        [
+          {
+            "node": "Wait: RSS Feeds",
+            "type": "main",
+            "index": 6
+          }
+        ]
+      ]
+    },
+    "Pack: FP": {
+      "main": [
+        [
+          {
+            "node": "Wait: RSS Feeds",
+            "type": "main",
+            "index": 7
+          }
+        ]
+      ]
+    },
+    "Pack: NFLTR": {
+      "main": [
+        [
+          {
+            "node": "Wait: RSS Feeds",
+            "type": "main",
+            "index": 8
+          }
+        ]
+      ]
+    },
+    "Wait: RSS Feeds": {
+      "main": [
+        [
+          {
+            "node": "Filter & Condense RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter & Condense RSS": {
+      "main": [
+        [
+          {
+            "node": "Select Top 12 Articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Top 12 Articles": {
+      "main": [
+        [
+          {
+            "node": "Jina Reader",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Jina Reader": {
+      "main": [
+        [
+          {
+            "node": "Pack Full Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pack Full Text": {
+      "main": [
+        [
+          {
+            "node": "Split Articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OverTheCap RSS": {
+      "main": [
+        [
+          {
+            "node": "Pack: OTC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ProFootballNetwork RSS": {
+      "main": [
+        [
+          {
+            "node": "Pack: PFN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RotoViz RSS": {
+      "main": [
+        [
+          {
+            "node": "Pack: RV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SharpFootball RSS": {
+      "main": [
+        [
+          {
+            "node": "Pack: SFA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pack: OTC": {
+      "main": [
+        [
+          {
+            "node": "Wait: RSS Feeds",
+            "type": "main",
+            "index": 9
+          }
+        ]
+      ]
+    },
+    "Pack: PFN": {
+      "main": [
+        [
+          {
+            "node": "Wait: RSS Feeds",
+            "type": "main",
+            "index": 10
+          }
+        ]
+      ]
+    },
+    "Pack: RV": {
+      "main": [
+        [
+          {
+            "node": "Wait: RSS Feeds",
+            "type": "main",
+            "index": 11
+          }
+        ]
+      ]
+    },
+    "Pack: SFA": {
+      "main": [
+        [
+          {
+            "node": "Wait: RSS Feeds",
+            "type": "main",
+            "index": 12
+          }
+        ]
+      ]
+    },
+    "Walter Football RSS": {
+      "main": [
+        [
+          {
+            "node": "Pack: WF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reddit DynastyFF": {
+      "main": [
+        [
+          {
+            "node": "Pack: Reddit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pack: WF": {
+      "main": [
+        [
+          {
+            "node": "Wait: RSS Feeds",
+            "type": "main",
+            "index": 13
+          }
+        ]
+      ]
+    },
+    "Pack: Reddit": {
+      "main": [
+        [
+          {
+            "node": "Wait: RSS Feeds",
+            "type": "main",
+            "index": 14
+          }
+        ]
+      ]
+    },
+    "When Called By Main": {
+      "main": [
+        [
+          {
+            "node": "ESPN NFL RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "CBS Sports NFL RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "ProFootballTalk RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "PFF RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Dynasty Nerds RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "DynastyLeagueFootball RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "PlayerProfiler RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "FantasyPros RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "NFL Trade Rumors RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "OverTheCap RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "ProFootballNetwork RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RotoViz RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "SharpFootball RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Walter Football RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Reddit DynastyFF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Articles": {
+      "main": [
+        [
+          {
+            "node": "Return RSS Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "cff15ff6-4dcf-494c-b55e-ff5094985004",
+  "tags": []
+}

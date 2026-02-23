@@ -1,0 +1,145 @@
+{
+  "name": "Sub - Prospect Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "id": "19b5c646-e21b-493f-bcd1-8fcf6c8cb9fe",
+      "name": "When Called By Main",
+      "position": [
+        -1936,
+        -512
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst articles = input.prospectArticles || [];\nconst existingProfiles = input.existingProspects || [];\nconst whitelist = input.whitelist || input.prospectWhitelist || [];\nconst dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/Chicago' });\n\nconst articleBlock = articles.map((a, i) => {\n  const text = (a.extracted_text || a.description || '').substring(0, 3500);\n  return `--- ARTICLE ${i+1} ---\\nTitle: ${a.title}\\nSource: ${a.source}\\nFull Text:\\n${text}`;\n}).join('\\n\\n');\n\nconst existingBlock = existingProfiles.length\n  ? existingProfiles.map(p => {\n      const strengths = (p.key_strengths || []).join(', ');\n      const concerns = (p.key_concerns || []).join(', ');\n      return `  ${p.player_name} | ${p.position||'-'} | ${p.school||'-'} | ${p.height||'-'}/${p.weight||'-'} | comp: ${p.consensus_comp||'-'} | strengths: ${strengths||'-'} | concerns: ${concerns||'-'} | mentions: ${p.total_mentions||0}`;\n    }).join('\\n')\n  : '(no existing profiles yet)';\n\n// Rotating profiles fallback — 3 random prospects with scouting notes\nlet profileFallback = '';\nconst prospectPool = whitelist.length > 0 ? whitelist : [];\nif (prospectPool.length > 0) {\n  const withNotes = prospectPool.filter(p => p.fantasypros_notes || p.notes);\n  const pool = withNotes.length >= 3 ? withNotes : prospectPool;\n  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);\n  const shuffled = [...pool].sort((a, b) => {\n    const hashA = ((a.fantasypros_rank || 0) * 31 + dayOfYear) % 997;\n    const hashB = ((b.fantasypros_rank || 0) * 31 + dayOfYear) % 997;\n    return hashA - hashB;\n  });\n  const selected = shuffled.slice(0, 3);\n\n  profileFallback = '\\n\\n=== SPOTLIGHT PROFILE DATA (use ONLY if no prospect articles found) ===\\n';\n  for (const p of selected) {\n    profileFallback += `PROSPECT: ${p.player_name} | ${p.position} | ${p.school || '\\u2014'}\\n`;\n    profileFallback += `  Round: ${p.consensus_round || '\\u2014'} | Tier: ${p.tier || '\\u2014'} | FP Rank: ${p.fantasypros_rank || '\\u2014'} | Age: ${p.age || '\\u2014'}\\n`;\n    profileFallback += `  Scouting Notes: ${p.fantasypros_notes || '\\u2014'}\\n`;\n    profileFallback += `  Additional Notes: ${p.notes || '\\u2014'}\\n`;\n    const profile = existingProfiles.find(pp => (pp.player_name || '').toLowerCase() === (p.player_name || '').toLowerCase());\n    if (profile) {\n      profileFallback += `  Height/Weight: ${profile.height || '\\u2014'} / ${profile.weight || '\\u2014'}\\n`;\n      profileFallback += `  Comp: ${profile.consensus_comp || '\\u2014'}\\n`;\n      profileFallback += `  Strengths: ${(profile.key_strengths || []).join(', ') || '\\u2014'}\\n`;\n      profileFallback += `  Concerns: ${(profile.key_concerns || []).join(', ') || '\\u2014'}\\n`;\n    }\n    profileFallback += '\\n';\n  }\n}\n\nconst systemPrompt = `You are the PROSPECT SCOUT for Dynasty Daily \\u2014 a premium daily dynasty fantasy football intelligence briefing for Brandon, who manages 30 SF/TEP/12-team Sleeper leagues.\n\nYou receive articles that may mention 2026 NFL Draft prospects. You also receive existing prospect profiles from the database AND a WHITELIST of valid 2026 prospects.\n\nYOUR JOB: Extract scouting data from articles and update the prospect database. You are NOT writing a newsletter section \\u2014 your output goes directly into database updates.\n\nCRITICAL WHITELIST RULE:\nYou have a WHITELIST of 2026 draft prospects below. ONLY output [DB_UPDATES] for players whose names appear in the whitelist. If an article mentions an NFL veteran or current professional player who is NOT on the whitelist \\u2014 even if the article frames them as a \"dynasty buy\" or \"fantasy target\" \\u2014 SKIP THEM. They are not draft prospects. Players like Jayden Daniels, Tucker Kraft, Kenneth Walker, Tyreek Hill etc. are NFL PLAYERS, not 2026 prospects.\n\nThe ONLY exception: if a prospect from the whitelist shares an article with NFL players (e.g., \"2026 mock draft with Mendoza going to the Raiders\"), extract the prospect data and ignore the NFL player data.\n\nOUTPUT FORMAT \\u2014 [DB_UPDATES] ONLY\n\nFor each whitelist prospect mentioned in today\\'s articles, output ONE of:\n\nUPDATE: Player Name | summary: [1 sentence describing what\\'s new today] | field: scouting_notes | value: [COMPLETE synthesized profile \\u2014 merge existing database data with new article data into one coherent scouting report. Do NOT just append \\u2014 rewrite the full profile incorporating all information.]\n\nor for brand new prospects not yet in the database:\n\nNEW: Player Name | position | school | summary: [1 sentence] | scouting_notes: [full scouting profile] | height: [if known] | weight: [if known] | consensus_comp: [if known] | key_strengths: [comma-separated] | key_concerns: [comma-separated]\n\nThe \"summary\" field is CRITICAL \\u2014 it becomes the \"What\\'s New\" indicator on the Big Board. Examples:\n- \"Added combine measurables and updated draft stock from Rd 2 to Rd 1-2\"\n- \"New PFF grades show elite receiving but poor run blocking\"\n- \"Landing spot analysis: Saints at 8 would maximize his slot role\"\n- \"Film notes: dominant contested catch rate in final 4 games\"\n\nPROFILE SYNTHESIS RULES:\n- When updating scouting_notes, READ the existing profile from the database first\n- MERGE new article data with existing data \\u2014 don\\'t overwrite good existing info\n- The result should be the BEST POSSIBLE profile combining all sources\n- Include specific numbers: yards, TDs, catch rates, PFF grades, snap counts\n- Write about the PLAYER, not the article. Wrong: \"Dynasty Nerds says Trigg has good athleticism.\" Right: \"Trigg\\'s 6\\'4 frame and 4.55 speed create seam mismatches.\"\n\nFALLBACK \\u2014 NO PROSPECT ARTICLES:\nIf no articles mention whitelist prospects, use the SPOTLIGHT PROFILE DATA below to write profiles for 3 rotating prospects who don\\'t yet have scouting_notes in the database. Use the NEW format above.\n\nDO NOT output [PROSPECT_INTEL]. Only output [DB_UPDATES].`;\n\nconst userMessage = `Date: ${dateStr}\n\n=== EXISTING PROSPECT DATABASE ===\n${existingBlock}\n\n=== TODAY'S ARTICLES (${articles.length} articles) ===\n${articleBlock || '(No prospect articles found today \\u2014 use the spotlight profile data below instead.)'}\n${profileFallback}\\n\\nWrite your [DB_UPDATES] now. Remember: ONLY whitelist prospects. NO NFL veterans.`;\n\nreturn [{ json: { systemPrompt, userPrompt: userMessage } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "e88f55d7-e43d-4276-95b1-5c0bead87b02",
+      "name": "Build Prospect Prompt",
+      "position": [
+        -1696,
+        -512
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.userPrompt}}",
+        "options": {
+          "systemMessage": "={{$json.systemPrompt}}",
+          "maxIterations": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "id": "1e1fd63f-a36d-42b8-a5f0-c16e2f1a4efe",
+      "name": "Prospect Agent",
+      "position": [
+        -1456,
+        -512
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1456,
+        -304
+      ],
+      "id": "9113d7ec-cd9c-4c73-8954-6af4983b169b",
+      "name": "Prospect Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "pvmfVuuHc6DAJEgl",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const agentOutput = $input.first().json;\nconst text = agentOutput.message?.content || agentOutput.text || agentOutput.output || '';\n\nif (text.length < 20) {\n  return [{ json: { prospect_intel: '', db_updates: '', raw: text, success: false }}];\n}\n\n// Extract DB_UPDATES section\nlet dbUpdates = '';\nconst dbIdx = text.indexOf('[DB_UPDATES]');\nif (dbIdx > -1) {\n  dbUpdates = text.substring(dbIdx + '[DB_UPDATES]'.length).trim();\n} else {\n  // The entire output might be DB_UPDATES without the marker\n  dbUpdates = text.trim();\n}\n\nreturn [{ json: {\n  prospect_intel: '', // No longer used\n  db_updates: dbUpdates,\n  raw: text,\n  success: true\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "063a2bc8-8d40-4359-96d4-6f1b527e2422",
+      "name": "Package Output",
+      "position": [
+        -1216,
+        -512
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Called By Main": {
+      "main": [
+        [
+          {
+            "node": "Build Prospect Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Prospect Prompt": {
+      "main": [
+        [
+          {
+            "node": "Prospect Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prospect Agent": {
+      "main": [
+        [
+          {
+            "node": "Package Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prospect Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Prospect Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "43746d4f-83b7-46f0-b3d2-90ec78dd2410",
+  "meta": {
+    "instanceId": "1dfcdd22466a9c775c71d3fa89d9e5137a0319cdd80e800b4f7027374e4e4fb9"
+  },
+  "id": "8fSzA5dfiAZZzY8u",
+  "tags": []
+}

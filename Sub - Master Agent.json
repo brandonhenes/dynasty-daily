@@ -1,0 +1,145 @@
+{
+  "name": "Sub - Master Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "id": "5d3625da-a6c2-4dac-858e-0aa3d1b49b84",
+      "name": "When Called By Main",
+      "position": [
+        -1488,
+        -816
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/Chicago' });\n\nconst newsOutput = input.newsOutput || '(News analysis unavailable)';\nconst marketOutput = input.marketOutput || '(Market analysis unavailable)';\nconst prospectOutput = input.prospectOutput || '(Prospect analysis unavailable)';\nconst tradePackages = input.tradePackages || '';\nconst fcReference = input.fcReference || '';\n\nconst systemPrompt = `You are the MASTER EDITOR for Dynasty Daily \\u2014 a premium daily dynasty fantasy football intelligence briefing for Brandon, who manages 30 SF/TEP/12-team Sleeper leagues.\n\nYou receive the completed analysis from three specialist analysts:\n1. NEWS ANALYST \\u2014 NFL transactions and dynasty article analysis\n2. MARKET ANALYST \\u2014 FantasyCalc values, trending data, and market opportunities\n3. PROSPECT SCOUT \\u2014 Rookie/draft prospect intel\n\nYou also receive a COMPLETE FC VALUE REFERENCE with 150+ player values and all 2026 pick values. USE THESE for every recommendation.\n\nYour job is SYNTHESIS. You do NOT repeat their analysis. You draw CONNECTIONS across all three domains that no individual analyst could see.\n\nOutput EXACTLY these 3 sections with markers on their own line:\n\n[HEADLINE]\n3-5 punchy sentences capturing today's #1 dynasty takeaway. This is what Brandon reads first \\u2014 it must HOOK him and give him the single most important thing to know before opening Sleeper today.\n\nRequirements:\n- Lead with the biggest story connecting news + market movement\n- Reference specific FC values or trending data to ground it in numbers\n- If a news event hasn't yet moved values, say so \\u2014 that's the opportunity\n- End with a forward-looking statement: what to watch for tomorrow\n- Write with energy. This is a premium briefing, not a textbook.\n\n[ONE_MOVE]\nBelow are pre-validated trade packages in 3 tiers. The math is GUARANTEED correct \\u2014 do NOT recalculate.\n\n${tradePackages}\n\nYOUR JOB: Pick ONE trade from EACH tier and write it up. All three appear in the newsletter.\n\nFormat for each:\n\n\\U0001f7e2 SAFE SWAP\n**SEND:** [exact names/values from chosen option]\n**GET:** [exact names/values from chosen option]\n**Why now:** 2-3 sentences connecting to today\\u2019s news/market.\n**Math:** Send total (X,XXX) \\u2248 Get total (X,XXX) (TEP-adj ratio: X.XX) \\u2713\n\n\\U0001f7e1 SPECULATIVE BUY\n**SEND:** [exact names/values]\n**GET:** [exact names/values]\n**Why now:** 2-3 sentences on what upside you\\u2019re buying.\n**Math:** Send total (X,XXX) \\u2192 Get total (X,XXX) (TEP-adj ratio: X.XX) \\u2014 paying premium for upside\n\n\\U0001f534 SMASH MOVE\n**SEND:** [exact names/values]\n**GET:** [exact names/values]\n**Why now:** 2-3 sentences on the bold thesis.\n**Math:** Send total (X,XXX) \\u2192 Get total (X,XXX) (TEP-adj ratio: X.XX) \\u2014 consolidation play\n\n**Confidence:** High / Medium / Low (across all 3)\n**Window:** How long until edges close?\n\nRULES:\n- Copy EXACT player names and FC values from chosen options. Do NOT substitute.\n- Copy EXACT totals and ratios. Do NOT recalculate.\n- Pick trades that CONNECT to today\\u2019s news \\u2014 if Charbonnet tore his ACL, the smash move should involve Walker or Seattle RBs.\n- If no option in a tier connects to today\\u2019s news, pick the best one and note the weaker connection.\n\n[BUY_SELL_HOLD]\n8-12 total recommendations that SYNTHESIZE all three analysts' work.\n\nFormat each as:\n\\U0001f7e2 BUY: **Player Name** (FC: X,XXX, \\u0394: +/-XXX) \\u2014 2-3 sentences connecting why news + market + prospects make this a buy RIGHT NOW.\n\n\\U0001f534 SELL: **Player Name** (FC: X,XXX, \\u0394: +/-XXX) \\u2014 2-3 sentences on why the peak is NOW.\n\n\\U0001f7e1 HOLD: **Player Name** (FC: X,XXX, \\u0394: +/-XXX) \\u2014 2-3 sentences on why patience wins.\n\nRequirements:\n- At LEAST 4 BUY, 3 SELL, 3 HOLD\n- Every recommendation must reference data from at least 2 of the 3 analysts\n- Include at least 1 pick recommendation (e.g., \"BUY 2026 mid-1st\")\n- Include at least 1 prospect-connected recommendation\n- Bold every player name\n- EVERY player must have their EXACT FC value from the reference \\u2014 NEVER write \"FC: N/A\", \"Est.\", \"~\", \"Not yet adjusted\", \"Speculative\", or \"Potential Risk\"\n- Order by conviction level (strongest first within each category)\n\nRULES:\n- Your unique value is CONNECTING information across domains\n- \"The news says X, but values haven't moved yet\" = opportunity\n- \"Values moved Y, but there's no news supporting it\" = overreaction\n- \"Prospect Z's draft stock affects veteran W's long-term value\" = dynasty thinking\n- Be bold. Brandon pays for edge, not safety.\n- Frame for SF/TEP/12-team dynasty\n- If a player doesn't appear in the FC reference list, DO NOT recommend them. Pick a different player who IS in the list.`;\n\nconst userPrompt = `${dateStr}\n\n========================================\n\\U0001f4f0 NEWS ANALYST OUTPUT\n========================================\n${newsOutput}\n\n========================================\n\\U0001f4ca MARKET ANALYST OUTPUT\n========================================\n${marketOutput}\n\n========================================\n\\U0001f393 PROSPECT SCOUT OUTPUT\n========================================\n${prospectOutput}\n${fcReference}\n\n========================================\n\nNow synthesize. Write HEADLINE, ONE_MOVE, and BUY_SELL_HOLD.\nDraw connections across all three analysts. Be specific. Use EXACT FC values from the reference list above for every recommendation.`;\n\nreturn [{ json: { systemPrompt, userPrompt } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "de99edf7-a860-4887-8da9-826abac1d947",
+      "name": "Build Master Prompt",
+      "position": [
+        -1248,
+        -816
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.userPrompt}}",
+        "options": {
+          "systemMessage": "={{$json.systemPrompt}}",
+          "maxIterations": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "id": "28582578-3024-40b5-a3a4-5c44c5259ea3",
+      "name": "Master Agent",
+      "position": [
+        -1008,
+        -816
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1008,
+        -608
+      ],
+      "id": "c86faeb0-27a3-4ee5-9ee1-cd39f4856e90",
+      "name": "Master Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "pvmfVuuHc6DAJEgl",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const agentOutput = $input.first().json;\nconst text = agentOutput.message?.content || agentOutput.text || agentOutput.output || '';\n\nif (text.length < 50) {\n  return [{ json: { headline: '', one_move: '', buy_sell_hold: '', raw: text, success: false }}];\n}\n\nfunction getSection(t, marker) {\n  const i = t.indexOf(marker);\n  if (i === -1) return '';\n  const start = i + marker.length;\n  const markers = ['[HEADLINE]','[ONE_MOVE]','[BUY_SELL_HOLD]'];\n  let end = t.length;\n  for (const m of markers) { if (m === marker) continue; const mi = t.indexOf(m, start); if (mi > -1 && mi < end) end = mi; }\n  return t.substring(start, end).trim();\n}\n\nlet oneMove = getSection(text, '[ONE_MOVE]') || '';\n\n// Validate ONE MOVE math — extract FC values and check ratio\nlet mathValid = null;\nif (oneMove) {\n  try {\n    // Extract all FC: X,XXX patterns\n    const fcPattern = /FC:\\s*([\\d,]+)/g;\n    const values = [];\n    let match;\n    while ((match = fcPattern.exec(oneMove)) !== null) {\n      values.push(parseInt(match[1].replace(/,/g, '')));\n    }\n\n    // Extract Send/Get totals from Math line\n    const mathLine = oneMove.split('\\n').find(l => l.includes('Math:') || l.includes('math:'));\n    if (mathLine) {\n      const totals = mathLine.match(/[\\d,]+/g);\n      if (totals && totals.length >= 2) {\n        const sendTotal = parseInt(totals[0].replace(/,/g, ''));\n        const getTotal = parseInt(totals[1].replace(/,/g, ''));\n        if (sendTotal > 0 && getTotal > 0) {\n          const ratio = sendTotal / getTotal;\n          mathValid = (ratio >= 0.85 && ratio <= 1.15);\n          if (!mathValid) {\n            // Append warning to ONE MOVE\n            const pctDiff = Math.round(Math.abs(1 - ratio) * 100);\n            oneMove += '\\n\\n\\u26a0\\ufe0f MATH CHECK FAILED: Send (' + sendTotal.toLocaleString() + ') vs Get (' + getTotal.toLocaleString() + ') is ' + pctDiff + '% apart \\u2014 outside the 15% threshold. Treat this trade idea directionally but rework the assets to balance.';\n          }\n        }\n      }\n    }\n  } catch(e) {\n    // Math validation failed silently — don't block output\n  }\n}\n\nreturn [{ json: {\n  headline: getSection(text, '[HEADLINE]') || '',\n  one_move: oneMove,\n  one_move_math_valid: mathValid,\n  buy_sell_hold: getSection(text, '[BUY_SELL_HOLD]') || '',\n  raw: text, success: true\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "576a686d-fc5a-4302-986b-bfc42021b3d7",
+      "name": "Package Output",
+      "position": [
+        -768,
+        -816
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Called By Main": {
+      "main": [
+        [
+          {
+            "node": "Build Master Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Master Prompt": {
+      "main": [
+        [
+          {
+            "node": "Master Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Master Agent": {
+      "main": [
+        [
+          {
+            "node": "Package Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Master Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Master Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e2c16d8b-65c6-4563-a933-29f95e746eb6",
+  "meta": {
+    "instanceId": "1dfcdd22466a9c775c71d3fa89d9e5137a0319cdd80e800b4f7027374e4e4fb9"
+  },
+  "id": "5NUzsUukNdBsJOSV",
+  "tags": []
+}

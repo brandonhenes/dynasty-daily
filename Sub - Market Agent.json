@@ -1,0 +1,145 @@
+{
+  "name": "Sub - Market Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "id": "b3332733-8d44-4c6b-aecc-ce31808da0da",
+      "name": "When Called By Main",
+      "position": [
+        -224,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/Chicago' });\n\nfunction fmtNum(n) { return n != null ? Number(n).toLocaleString() : '—'; }\n\nconst fc = input.fantasycalc || {};\nconst picks = fc.picks2026 || [];\nconst risers = fc.risers || [];\nconst fallers = fc.fallers || [];\nconst young = fc.youngPlayers || [];\nconst allPlayers = fc.allPlayers || [];\n\nconst trending = input.trending || {};\nconst adds = trending.trending_adds || [];\nconst drops = trending.trending_drops || [];\n\nconst diffs = input.fcDiffs || [];\nconst streaks = input.streaks || [];\n\nlet picksBlock = picks.map(p => `  ${p.name}: ${fmtNum(p.dynasty_value)} (30d: ${p.trend_30day > 0 ? '+' : ''}${p.trend_30day})`).join('\\n') || '(no pick data)';\n\nlet risersBlock = risers.slice(0,20).map(p => \n  `  ${p.name} (${p.position}, ${p.team}): ${fmtNum(p.dynasty_value)} (+${p.trend_30day}) | age: ${p.age || '?'}`\n).join('\\n') || '(none)';\n\nlet fallersBlock = fallers.slice(0,20).map(p => \n  `  ${p.name} (${p.position}, ${p.team}): ${fmtNum(p.dynasty_value)} (${p.trend_30day}) | age: ${p.age || '?'}`\n).join('\\n') || '(none)';\n\nlet youngBlock = young.slice(0,15).map(p => \n  `  ${p.name} (${p.position}, ${p.team}, ${p.age}y): ${fmtNum(p.dynasty_value)}`\n).join('\\n') || '(none)';\n\nlet diffsBlock = diffs.slice(0,40).map(d => \n  `  ${d.player_name}: ${fmtNum(d.dynasty_value)} (day: ${(d.day_change||0) > 0 ? '+':''}${d.day_change||0})`\n).join('\\n') || '(need 2+ days)';\n\nlet addsBlock = adds.slice(0,15).map(a => {\n  const fcv = allPlayers.find(f => (f.name||'').toLowerCase() === (a.name||'').toLowerCase());\n  const st = streaks.find(s => (s.player_name||'').toLowerCase() === (a.name||'').toLowerCase());\n  const sk = st ? (st.add_streak_days||st.days_on_adds||0) : 0;\n  return `  ${a.name} (${a.position}, ${a.team}): ${fmtNum(a.add_count)} adds | FC: ${fcv ? fmtNum(fcv.dynasty_value) : '—'}${sk>=2 ? ' | '+sk+'d streak' : ''}`;\n}).join('\\n') || '(none)';\n\nlet dropsBlock = drops.slice(0,15).map(d => {\n  const fcv = allPlayers.find(f => (f.name||'').toLowerCase() === (d.name||'').toLowerCase());\n  const st = streaks.find(s => (s.player_name||'').toLowerCase() === (d.name||'').toLowerCase());\n  const sk = st ? (st.drop_streak_days||st.days_on_drops||0) : 0;\n  return `  ${d.name} (${d.position}, ${d.team}): ${fmtNum(d.drop_count)} drops | FC: ${fcv ? fmtNum(fcv.dynasty_value) : '—'}${sk>=2 ? ' | '+sk+'d streak' : ''}`;\n}).join('\\n') || '(none)';\n\nlet streaksBlock = streaks.filter(s => (s.add_streak_days||s.days_on_adds||s.drop_streak_days||s.days_on_drops||0) >= 3)\n  .slice(0,15).map(s => {\n    const days = s.add_streak_days || s.days_on_adds || s.drop_streak_days || s.days_on_drops || 0;\n    const dir = (s.add_streak_days||s.days_on_adds) ? 'adds' : 'drops';\n    return `  ${s.player_name}: ${days}d consecutive ${dir}`;\n  }).join('\\n') || '(no 3+ day streaks)';\n\nconst systemPrompt = `You are the MARKET ANALYST for Dynasty Daily — a premium daily dynasty fantasy football intelligence briefing for Brandon, who manages 30 SF/TEP/12-team Sleeper leagues.\n\nYou receive FantasyCalc dynasty values, day-over-day changes, 30-day trends, Sleeper trending add/drop data, and signal streaks. Your job is to find every actionable market opportunity.\n\nOutput EXACTLY these 2 sections with markers on their own line:\n\n[DYNASTY_VALUES]\nStructure your analysis in three parts:\n\nPART 1 — 2026 PICK MARKET (always include this):\nAnalyze each pick tier: 1.01, 1.02, generic 1st, generic 2nd, generic 3rd.\nFor each: current FC value, 30-day trend, and a 2-sentence take on whether to buy/sell/hold picks right now. Are picks deflating? Is this a buying window before rookie fever inflates them? What's the macro story on pick values this week?\n\nPART 2 — BIGGEST MOVERS (8-12 players):\nCover the most significant risers AND fallers. For each:\n**Player Name** (Position, Team): FC value X,XXX (Δ +/-XXX, 30d trend)\nWhy it's moving: 1-2 sentences on the likely driver (news, trade rumors, depth chart, injury)\nOpportunity: BUY / SELL / HOLD with specific reasoning\nWho to pair in trades: name a realistic trade partner or package\n\nMix risers and fallers. Prioritize players with large absolute moves AND players where the move creates a clear mispricing.\n\nPART 3 — YOUNG ASSETS & DEEP VALUE (3-5 players):\nIdentify undervalued young players (≤24) who aren't in the \"biggest movers\" but represent long-term value. Players where the FC value doesn't reflect the ceiling.\n\n[WAIVER_COMMENTARY]\n5-8 sentences of rich analysis on the trending add/drop patterns:\n- Which adds are connected to specific news events? (be specific: \"Player X adds spiked because Y was released\")\n- Which multi-day add streaks signal sustained interest vs flash-in-the-pan reactionary adds?\n- Which drops are OVERREACTIONS that create buy-low opportunities? Name them.\n- Any positional patterns? (e.g., \"QB adds dominating suggests SF league managers are panicking about QB depth\")\n- What's the single most actionable waiver move across 30 leagues?\n\nDo NOT write tables — those are rendered from raw data separately. Write analysis.\n\nRULES:\n- Bold every player name on first mention\n- Use specific FC values and changes with every recommendation\n- Include actual numbers from the data — don't be vague\n- Frame for SF/TEP/12-team dynasty\n- Be opinionated and specific. Every recommendation needs a direction and a reason.\n- When a player's value move contradicts what news suggests, FLAG that discrepancy.\n- When explaining WHY a value is moving, say \"likely due to\" or \"possibly driven by\" — do NOT state causes as fact unless you have specific evidence from the data.\n- Do NOT invent news events to explain value changes. If you don't know why a value moved, say \"cause unclear — monitor for news.\"\n- It is February 2026. Your training data about team situations may be stale. Only reference team contexts you're confident about.`;\n\nconst userPrompt = `${dateStr}\n\n=== 2026 PICKS ===\n${picksBlock}\n\n=== TOP RISERS (30d) ===\n${risersBlock}\n\n=== TOP FALLERS (30d) ===\n${fallersBlock}\n\n=== YOUNG ASSETS (≤24) ===\n${youngBlock}\n\n=== DAY-OVER-DAY VALUE CHANGES ===\n${diffsBlock}\n\n=== TRENDING ADDS (24h) ===\n${addsBlock}\n\n=== TRENDING DROPS (24h) ===\n${dropsBlock}\n\n=== MULTI-DAY STREAKS (3+) ===\n${streaksBlock}\n\nAnalyze the market thoroughly now.`;\n\nreturn [{ json: { systemPrompt, userPrompt } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "faa93833-7e89-4bff-8203-4e78f710adc8",
+      "name": "Build Market Prompt",
+      "position": [
+        16,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.userPrompt}}",
+        "options": {
+          "systemMessage": "={{$json.systemPrompt}}",
+          "maxIterations": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "id": "9a7768d3-ebb1-4426-97b3-fc61a4bf660f",
+      "name": "Market Agent",
+      "position": [
+        256,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        256,
+        192
+      ],
+      "id": "51d61781-3c85-4329-b47c-158da3700bb4",
+      "name": "Market Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "pvmfVuuHc6DAJEgl",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const agentOutput = $input.first().json;\nconst text = agentOutput.message?.content || agentOutput.text || agentOutput.output || '';\n\nif (text.length < 50) {\n  return [{ json: { dynasty_values: 'Market analysis unavailable.', waiver_commentary: '', raw: text, success: false }}];\n}\n\nfunction getSection(t, marker) {\n  const i = t.indexOf(marker);\n  if (i === -1) return '';\n  const start = i + marker.length;\n  const markers = ['[DYNASTY_VALUES]','[WAIVER_COMMENTARY]'];\n  let end = t.length;\n  for (const m of markers) { if (m === marker) continue; const mi = t.indexOf(m, start); if (mi > -1 && mi < end) end = mi; }\n  return t.substring(start, end).trim();\n}\n\nreturn [{ json: {\n  dynasty_values: getSection(text, '[DYNASTY_VALUES]') || text,\n  waiver_commentary: getSection(text, '[WAIVER_COMMENTARY]') || '',\n  raw: text, success: true\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "5c770de4-39e3-48dd-a943-e7a972f12016",
+      "name": "Package Output",
+      "position": [
+        496,
+        -16
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Called By Main": {
+      "main": [
+        [
+          {
+            "node": "Build Market Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Market Prompt": {
+      "main": [
+        [
+          {
+            "node": "Market Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Market Agent": {
+      "main": [
+        [
+          {
+            "node": "Package Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Market Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Market Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9e0b840e-bbad-421e-aab6-dfd17283d313",
+  "meta": {
+    "instanceId": "1dfcdd22466a9c775c71d3fa89d9e5137a0319cdd80e800b4f7027374e4e4fb9"
+  },
+  "id": "Yipz7CjK0xnnVCHi",
+  "tags": []
+}

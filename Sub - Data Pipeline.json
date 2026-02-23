@@ -1,0 +1,687 @@
+{
+  "name": "Sub - Data Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "id": "b8a34c8a-433f-4347-8fea-79d8a5f5e1fb",
+      "name": "When Called By Main",
+      "position": [
+        -600,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=2&numTeams=12&ppr=1",
+        "options": {
+          "response": {
+            "response": {}
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "4395f535-1cfd-417e-8674-e2fe69381e47",
+      "name": "FantasyCalc API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        80,
+        640
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse FantasyCalc — separates risers/fallers/picks + formats Supabase rows\n// v3: FantasyCalc API feeds directly into this node\nconst players = $input.all().map(i => i.json);\n\n// players already set from $input.all()\n\nconst today = new Date().toISOString().split('T')[0];\n\nconst formatted = players.filter(p => p).map(p => {\n  const pl = p.player || {};\n  const pk = p.pick || null;\n  const isPick = !!pk;\n  const name = isPick\n    ? `${pk.season || ''} Pick ${pk.round || ''}.${String(pk.order || '').padStart(2, '0')}`\n    : (pl.name || `${pl.firstName || ''} ${pl.lastName || ''}`.trim() || 'Unknown');\n  return {\n    player_name: name,\n    name: name,\n    position: isPick ? 'PICK' : (pl.position || '??'),\n    team: isPick ? null : (pl.maybeTeam || pl.team || 'FA'),\n    sleeperId: pl.sleeperId || null,\n    age: pl.maybeAge ? Math.round(pl.maybeAge * 10) / 10 : null,\n    dynasty_value: p.value || 0,\n    value: p.value || 0,\n    overall_rank: p.overallRank || 999,\n    overallRank: p.overallRank || 999,\n    positionRank: p.positionRank || 999,\n    trend_30day: p.overallTrend || p.trend30Day || 0,\n    trend30Day: p.overallTrend || p.trend30Day || 0,\n    is_pick: isPick,\n    is_rookie: pl.rookie || false,\n    tier: p.maybeTier || null,\n    tradeFrequency: p.maybeTradeFrequency || 0,\n  };\n});\n\nformatted.sort((a, b) => b.dynasty_value - a.dynasty_value);\n\n// Subsets for the AI prompt\nconst risers = formatted.filter(p => p.dynasty_value >= 500 && p.trend_30day > 0)\n  .sort((a, b) => b.trend_30day - a.trend_30day).slice(0, 15);\nconst fallers = formatted.filter(p => p.dynasty_value >= 500 && p.trend_30day < 0)\n  .sort((a, b) => a.trend_30day - b.trend_30day).slice(0, 15);\nconst picks2026 = formatted.filter(p => p.name.includes('2026') && p.position === 'PICK')\n  .sort((a, b) => a.overallRank - b.overallRank);\nconst youngPlayers = formatted.filter(p => p.position !== 'PICK' && p.age && p.age <= 23)\n  .sort((a, b) => a.overallRank - b.overallRank).slice(0, 20);\n\n// Format rows for Supabase fantasycalc_daily table\nconst fc_daily_rows = formatted.map(p => ({\n  snapshot_date: today,\n  player_name: p.player_name,\n  position: p.position,\n  team: p.team,\n  dynasty_value: p.dynasty_value,\n  trend_30day: p.trend_30day,\n  overall_rank: p.overall_rank,\n  is_rookie: p.is_rookie,\n  is_pick: p.is_pick,\n}));\n\nreturn [{ json: {\n  fc_values: formatted,\n  fc_count: formatted.length,\n  fc_daily_rows: fc_daily_rows,\n  fantasycalc: {\n    top50: formatted.slice(0, 50),\n    allPlayers: formatted,\n    risers, fallers, picks2026, youngPlayers,\n    totalPlayers: formatted.length,\n    fetchedAt: new Date().toISOString(),\n  }\n}}];\n"
+      },
+      "id": "4c40b0e0-5ea0-4bcc-897f-a5eba3235188",
+      "name": "Parse FantasyCalc",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        640
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://afbntzoibafahnduxixb.supabase.co/rest/v1/fantasycalc_daily?on_conflict=snapshot_date,player_name",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal,resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Parse FantasyCalc').first().json.fc_daily_rows) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "1f9ccd23-e0ef-4f5e-88c3-ae00fab530c9",
+      "name": "Write FC Daily",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        944,
+        640
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://api.sleeper.app/v1/players/nfl/trending/add?lookback_hours=24&limit=25",
+        "options": {
+          "response": {
+            "response": {}
+          },
+          "timeout": 20000
+        }
+      },
+      "id": "179c2fe3-41df-4537-bff7-5e63dde62133",
+      "name": "Sleeper Trending Adds",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -112,
+        784
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://api.sleeper.app/v1/players/nfl/trending/drop?lookback_hours=24&limit=25",
+        "options": {
+          "response": {
+            "response": {}
+          },
+          "timeout": 20000
+        }
+      },
+      "id": "bc432a9d-2d3b-44c9-92fb-04ce7ff2354d",
+      "name": "Sleeper Trending Drops",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -112,
+        944
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "XTfv9xNcPdtdkoOb",
+          "mode": "list",
+          "cachedResultName": "sleeper_cache",
+          "cachedResultUrl": "/projects/RmUkvUDDPnlmSvoM/datatables/XTfv9xNcPdtdkoOb"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "cache_key",
+              "keyValue": "players_slim_v1"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "id": "77bb6dd9-b2c2-40d4-96cc-f9c964f7a120",
+      "name": "Get Player Cache",
+      "position": [
+        -112,
+        1104
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "if ($input.all().length === 0) {\n  return [{ json: { cacheMissing: true, message: 'Player cache not found.', playerLookup: {} } }];\n}\nconst row = $input.first().json;\nconst value = row.value;\nif (typeof value !== 'string' || value.length < 10) {\n  return [{ json: { cacheMissing: true, message: 'Cache row value is missing or too small.', playerLookup: {} } }];\n}\nlet lookup;\ntry { lookup = JSON.parse(value); } catch(e) {\n  return [{ json: { cacheMissing: true, message: 'Cache parse error: ' + e.message, playerLookup: {} } }];\n}\nif (!lookup || typeof lookup !== 'object' || Object.keys(lookup).length < 1000) {\n  return [{ json: { cacheMissing: true, message: 'Parsed cache looks too small.', playerLookup: {} } }];\n}\nreturn [{ json: { cache_ready: true, player_count: Object.keys(lookup).length, playerLookup: lookup } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "51354d86-b94b-44bb-8baa-32c53f3ad119",
+      "name": "Parse Player Cache",
+      "position": [
+        112,
+        1104
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "id": "80789734-190d-4bca-972e-740ab19aa7a9",
+      "name": "Wait: Trending Inputs",
+      "position": [
+        288,
+        944
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Enrich trending adds/drops with player names, position, team from cache\n// v3.1: outputs both player_name AND name/position/team for downstream compat\nconst allInputs = $input.all().map(i => i.json);\n\nlet playerCache = {};\nlet addsRaw = [];\nlet dropsRaw = [];\n\nfor (const item of allInputs) {\n  if (item.player_cache) {\n    playerCache = item.player_cache;\n  } else if (item.adds !== undefined || Array.isArray(item) && item[0]?.player_id) {\n    addsRaw = Array.isArray(item) ? item : (item.adds || []);\n  } else if (item.drops !== undefined) {\n    dropsRaw = Array.isArray(item) ? item : (item.drops || []);\n  }\n}\n\n// Fallback: try direct node references\nif (Object.keys(playerCache).length === 0) {\n  try { playerCache = $('Parse Player Cache').first().json.player_cache || {}; } catch(e) {}\n  if (Object.keys(playerCache).length === 0) {\n    try { playerCache = $('Parse Player Cache').first().json.playerLookup || {}; } catch(e) {}\n  }\n}\nif (addsRaw.length === 0) {\n  try { addsRaw = $('Sleeper Trending Adds').all().map(i => i.json); } catch(e) {}\n}\nif (dropsRaw.length === 0) {\n  try { dropsRaw = $('Sleeper Trending Drops').all().map(i => i.json); } catch(e) {}\n}\n\n// Build FC sleeperId lookup as secondary name source\nlet fcLookup = {};\ntry {\n  const fcData = $('Parse FantasyCalc').first().json;\n  const allPlayers = fcData.fc_values || fcData.fantasycalc?.allPlayers || [];\n  for (const p of allPlayers) {\n    if (p.sleeperId) {\n      fcLookup[String(p.sleeperId)] = {\n        name: p.player_name || p.name,\n        position: p.position,\n        team: p.team\n      };\n    }\n  }\n} catch(e) {}\n\nfunction lookup(sleeperId) {\n  const id = String(sleeperId);\n  const cached = playerCache[id];\n  let name = null, position = null, team = null;\n\n  if (cached && typeof cached === 'object') {\n    const fn = cached.first_name || cached.fn || '';\n    const ln = cached.last_name || cached.ln || '';\n    name = (fn + ' ' + ln).trim() || null;\n    position = cached.position || cached.pos || cached.p || null;\n    team = cached.team || cached.t || null;\n  } else if (typeof cached === 'string' && cached) {\n    name = cached;\n  }\n\n  if (!name && fcLookup[id]) {\n    name = fcLookup[id].name;\n    position = position || fcLookup[id].position;\n    team = team || fcLookup[id].team;\n  }\n\n  if (!name && cached && typeof cached === 'object') {\n    name = cached.n || null;\n    position = position || cached.p || null;\n    team = team || cached.t || null;\n  }\n\n  return {\n    name: name || `Unknown (${id})`,\n    position: position || '-',\n    team: team || '-'\n  };\n}\n\nconst trendingAdds = (addsRaw || []).slice(0, 10).map(p => {\n  const info = lookup(p.player_id);\n  return {\n    player_id: p.player_id,\n    player_name: info.name,\n    name: info.name,\n    position: info.position,\n    team: info.team,\n    add_count: p.add_count || p.count || 0,\n    rank_adds: p.rank_adds || null,\n  };\n});\n\nconst trendingDrops = (dropsRaw || []).slice(0, 10).map(p => {\n  const info = lookup(p.player_id);\n  return {\n    player_id: p.player_id,\n    player_name: info.name,\n    name: info.name,\n    position: info.position,\n    team: info.team,\n    drop_count: p.drop_count || p.count || 0,\n    rank_drops: p.rank_drops || null,\n  };\n});\n\nconst today_sig = new Date().toISOString().split('T')[0];\nconst signal_rows = trendingAdds.map(p => ({\n  signal_date: today_sig,\n  player_name: p.player_name,\n  position: p.position || null,\n  team: p.team || null,\n  add_count: p.add_count || 0,\n  drop_count: trendingDrops.find(d => d.player_id === p.player_id)?.drop_count || 0,\n  rank_adds: p.rank_adds || null,\n  rank_drops: p.rank_drops || null,\n}));\n\nreturn [{ json: { trending_adds: trendingAdds, trending_drops: trendingDrops, signal_rows } }];"
+      },
+      "id": "b83184b6-0a66-463a-86a3-fad30ef24718",
+      "name": "Enrich Trending Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        944
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://afbntzoibafahnduxixb.supabase.co/rest/v1/daily_signals?on_conflict=signal_date,player_name",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal,resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Enrich Trending Data').first().json.signal_rows) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "32e63bec-dc1b-4cc6-a1e7-f0524a9e87f3",
+      "name": "Write Daily Signals",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        944,
+        864
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://afbntzoibafahnduxixb.supabase.co/rest/v1/rpc/fc_daily_diffs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "c070fda2-dcb5-4107-bd6e-ee3454c63d17",
+      "name": "Read FC Diffs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1776,
+        208
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://afbntzoibafahnduxixb.supabase.co/rest/v1/rpc/signal_streaks",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "5c6e48d5-23d9-4923-a1b8-d8e3e424c479",
+      "name": "Read Signal Streaks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1776,
+        352
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://afbntzoibafahnduxixb.supabase.co/rest/v1/rpc/mention_counts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "aefabcc1-0896-41c1-9648-95e73edd6cec",
+      "name": "Read Mention Counts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1776,
+        512
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://afbntzoibafahnduxixb.supabase.co/rest/v1/prospect_profiles?order=position.asc,total_mentions.desc",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "3f8a42b1-33eb-4f15-94a5-11a8bcdcd043",
+      "name": "Read Prospect Profiles",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1776,
+        672
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://afbntzoibafahnduxixb.supabase.co/rest/v1/prospects_2026?select=player_name,position,school,consensus_round,tier,fantasypros_rank,age,fantasypros_notes&order=position.asc,fantasypros_rank.asc",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_KEY_HERE"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1776,
+        848
+      ],
+      "id": "67965ca2-263f-49f4-96fd-ef5cf298e48f",
+      "name": "Read Prospect Whitelist",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "numberInputs": 7
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "id": "d9479801-6cf3-4bd4-8144-c9acd41590a0",
+      "name": "Wait: All Data",
+      "position": [
+        800,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect all data from parallel branches and return to Main\nlet fcData = {};\ntry { fcData = $('Parse FantasyCalc').first().json; } catch(e) {}\n\nlet trendingData = {};\ntry { trendingData = $('Enrich Trending Data').first().json; } catch(e) {}\n\nlet fcDiffs = [];\ntry { fcDiffs = $('Read FC Diffs').all().map(i => i.json).filter(r => r && r.player_name); } catch(e) {}\n\nlet signalStreaks = [];\ntry { signalStreaks = $('Read Signal Streaks').all().map(i => i.json).filter(r => r && r.player_name); } catch(e) {}\n\nlet mentionCounts = [];\ntry { mentionCounts = $('Read Mention Counts').all().map(i => i.json).filter(r => r && r.player_name); } catch(e) {}\n\nlet prospectProfiles = [];\ntry { prospectProfiles = $('Read Prospect Profiles').all().map(i => i.json).filter(r => r && r.player_name); } catch(e) {}\n\nlet whitelist = [];\ntry { whitelist = $('Read Prospect Whitelist').all().map(i => i.json).filter(r => r && r.player_name); } catch(e) {}\n\nreturn [{ json: {\n  fcData,\n  trendingData,\n  fcDiffs,\n  signalStreaks,\n  mentionCounts,\n  prospectProfiles,\n  whitelist\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "d5d28d07-d7e2-4aa0-bb80-9fb1e3104963",
+      "name": "Return Data",
+      "position": [
+        1100,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "FantasyCalc API": {
+      "main": [
+        [
+          {
+            "node": "Parse FantasyCalc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Player Cache": {
+      "main": [
+        [
+          {
+            "node": "Parse Player Cache",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Player Cache": {
+      "main": [
+        [
+          {
+            "node": "Wait: Trending Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sleeper Trending Adds": {
+      "main": [
+        [
+          {
+            "node": "Wait: Trending Inputs",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Sleeper Trending Drops": {
+      "main": [
+        [
+          {
+            "node": "Wait: Trending Inputs",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Parse FantasyCalc": {
+      "main": [
+        [
+          {
+            "node": "Write FC Daily",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wait: All Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich Trending Data": {
+      "main": [
+        [
+          {
+            "node": "Write Daily Signals",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wait: All Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Wait: Trending Inputs": {
+      "main": [
+        [
+          {
+            "node": "Enrich Trending Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Called By Main": {
+      "main": [
+        [
+          {
+            "node": "FantasyCalc API",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Sleeper Trending Adds",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Sleeper Trending Drops",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Player Cache",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read FC Diffs",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Signal Streaks",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Mention Counts",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Prospect Profiles",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Prospect Whitelist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read FC Diffs": {
+      "main": [
+        [
+          {
+            "node": "Wait: All Data",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Read Signal Streaks": {
+      "main": [
+        [
+          {
+            "node": "Wait: All Data",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Read Mention Counts": {
+      "main": [
+        [
+          {
+            "node": "Wait: All Data",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Read Prospect Profiles": {
+      "main": [
+        [
+          {
+            "node": "Wait: All Data",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "Read Prospect Whitelist": {
+      "main": [
+        [
+          {
+            "node": "Wait: All Data",
+            "type": "main",
+            "index": 6
+          }
+        ]
+      ]
+    },
+    "Wait: All Data": {
+      "main": [
+        [
+          {
+            "node": "Return Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "25dc36b7-4896-42ec-84d2-034f5aaf1303",
+  "tags": []
+}
+
+
