@@ -575,7 +575,7 @@
             },
             {
               "name": "Authorization",
-              "value": "Bearer jina_e43a3e7bb1904fe5a1a23307d4a1aa06A74B2UI662ub9svWJyrcT1wbS27A"
+              "value": "Bearer YOUR KEY HERE"
             }
           ]
         },
